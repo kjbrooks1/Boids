@@ -27,8 +27,8 @@ class Boid {
     }
     
     func makeVertices() -> [Float] {
-        let startx: Float = Float.random(in: -1 ..< 1)
-        let starty: Float = Float.random(in: -1 ..< 1)
+        let startx: Float = 0 //Float.random(in: -1 ..< 1)
+        let starty: Float = 0.7 //Float.random(in: -1 ..< 1)
         
         // color (RGBA) is always black
         // oddball point pos is always random to start

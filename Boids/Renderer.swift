@@ -25,6 +25,8 @@ class Renderer : NSObject, MTKViewDelegate {
     var vertexBuffer: MTLBuffer!
     var swarm: Swarm!
     
+    var time: TimeInterval = 0.0
+    
     private var constantsBuffer: MTLBuffer!
     private let constantsSize: Int
     private let constantsStride: Int
@@ -94,15 +96,20 @@ class Renderer : NSObject, MTKViewDelegate {
     }
     
     func updateConstants() {
-        let time = CACurrentMediaTime()
-        let speedFactor = 3.0
-        let rotationAngle = Float(fmod(speedFactor * time, .pi * 2))
-        let rotationMagnitude: Float = 0.1
-        var positionOffset = rotationMagnitude * SIMD2<Float>(cos(rotationAngle), sin(rotationAngle))
+        
+        time += 1.0 / Double(view.preferredFramesPerSecond)
+        let t = Float(time)
+        
+        let speedFactor: Float = 3.0
+        let distance: Float = 12 * -t
+        let rotationAngle = Float(fmod(speedFactor * t, .pi * 2))
+        let rotationMagnitude: Float = 0.05
+        var positionOffset = rotationMagnitude * SIMD2<Float>(cos(rotationAngle), distance)
         
         constantsBufferOffset = (frameIndex % Renderer.maxFramesInFlight) * constantsStride
         let constants = constantsBuffer.contents().advanced(by: constantsBufferOffset)
         constants.copyMemory(from: &positionOffset, byteCount: constantsSize)
+        
     }
     
     

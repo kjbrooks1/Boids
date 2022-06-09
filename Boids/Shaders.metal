@@ -19,7 +19,6 @@ struct VertexIn {
 struct VertexOut {
     float4 position [[position]];
     float4 color;
-    
 };
 
 vertex VertexOut vertex_main(VertexIn in [[stage_in]], constant float2 &positionOffset [[buffer(1)]])
