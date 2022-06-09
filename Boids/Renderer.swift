@@ -89,22 +89,21 @@ class Renderer : NSObject, MTKViewDelegate {
         swarm = Swarm(winSize: windowSize, boidCount: 1)
         let b: Boid = swarm.boids[0]
         // makeBuffer -> makes buffer and copies vertices all in one step
-        vertexBuffer = device.makeBuffer(bytes: b.vertices, length: MemoryLayout<Float>.stride * b.vertices.count, options: .storageModeShared)
+        vertexBuffer = device.makeBuffer(length: b.verticesDataSize, options: .storageModeShared)
+        b.copyVertexData(to: vertexBuffer)
         
         // make constants buffer - used for animation (nothing in it tho)
         constantsBuffer = device.makeBuffer(length: constantsStride * Renderer.maxFramesInFlight, options: .storageModeShared)
     }
     
     func updateConstants() {
-        
         time += 1.0 / Double(view.preferredFramesPerSecond)
         let t = Float(time)
         
-        let speedFactor: Float = 3.0
-        let distance: Float = 12 * -t
+        let speedFactor: Float = 1.5
         let rotationAngle = Float(fmod(speedFactor * t, .pi * 2))
         let rotationMagnitude: Float = 0.05
-        var positionOffset = rotationMagnitude * SIMD2<Float>(cos(rotationAngle), distance)
+        var positionOffset = rotationMagnitude * SIMD2<Float>(cos(rotationAngle), 1)
         
         constantsBufferOffset = (frameIndex % Renderer.maxFramesInFlight) * constantsStride
         let constants = constantsBuffer.contents().advanced(by: constantsBufferOffset)
@@ -123,12 +122,19 @@ class Renderer : NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         frameSemaphore.wait()
         
+        
+        for b in swarm.boids {
+            b.update(with: TimeInterval(1 / 60.0))
+            b.copyVertexData(to: vertexBuffer)
+        }
+         
+       
         updateConstants()
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2, 0.4, 0.6, 1) // set bg color
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         
         // encode drawing commands -> draw triangle
