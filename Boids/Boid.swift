@@ -13,8 +13,8 @@ class Boid {
     static let width: Float  = 0.075
     static let height: Float = 2 * width
     
-    var vertices: [Vertex]!
-    private var velocity: Velocity!
+    var vertices: [Float]!
+    var velocity: Velocity!
     
     init(winSize: WindowSize) {
         // follow rules in makeVertices func
@@ -26,16 +26,20 @@ class Boid {
         velocity = Velocity(pos: [speed*cos(angle), speed*sin(angle)])
     }
     
-    func makeVertices() -> [Vertex] {
+    func makeVertices() -> [Float] {
         let startx: Float = Float.random(in: -1 ..< 1)
         let starty: Float = Float.random(in: -1 ..< 1)
         
         // color (RGBA) is always black
         // oddball point pos is always random to start
         // triangle size is always the same accordinng to width and height of boid
-        return [Vertex(color: [0, 0, 0, 1], pos: [startx, starty]),
-                Vertex(color: [0, 0, 0, 1], pos: [startx + (Boid.width/2), starty + Boid.height]),
-                Vertex(color: [0, 0, 0, 1], pos: [startx - (Boid.width/2), starty + Boid.height])]
+        let vertexData: [Float] = [
+            //    x                     y                    r  g  b  a
+            startx,                  starty,                 0, 0, 0, 1,
+            startx + (Boid.width/2), starty + Boid.height,   0, 0, 0, 1,
+            startx - (Boid.width/2), starty + Boid.height,   0, 0, 0, 1
+        ]
+        return vertexData
     }
     
 }
