@@ -18,7 +18,6 @@
 		4962801A2850DB48003840E2 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 496280192850DB48003840E2 /* MetalKit.framework */; };
 		4962801C2850DBB7003840E2 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4962801B2850DBB7003840E2 /* Renderer.swift */; };
 		4962801E2850E63A003840E2 /* Boid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4962801D2850E639003840E2 /* Boid.swift */; };
-		496280202850E649003840E2 /* Swarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4962801F2850E649003840E2 /* Swarm.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -35,7 +34,6 @@
 		496280192850DB48003840E2 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		4962801B2850DBB7003840E2 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		4962801D2850E639003840E2 /* Boid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Boid.swift; sourceTree = "<group>"; };
-		4962801F2850E649003840E2 /* Swarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Swarm.swift; sourceTree = "<group>"; };
 		4962802128512A1C003840E2 /* ShaderDefinitions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderDefinitions.h; sourceTree = "<group>"; };
 		4962802228512ED9003840E2 /* Boids-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Boids-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,7 +80,6 @@
 				4962801B2850DBB7003840E2 /* Renderer.swift */,
 				4962802128512A1C003840E2 /* ShaderDefinitions.h */,
 				4962801D2850E639003840E2 /* Boid.swift */,
-				4962801F2850E649003840E2 /* Swarm.swift */,
 				496280052850DA87003840E2 /* Assets.xcassets */,
 				496280072850DA87003840E2 /* Main.storyboard */,
 				4962800A2850DA87003840E2 /* Boids.entitlements */,
@@ -172,7 +169,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				496280202850E649003840E2 /* Swarm.swift in Sources */,
 				4962801C2850DBB7003840E2 /* Renderer.swift in Sources */,
 				496280112850DAA4003840E2 /* Shaders.metal in Sources */,
 				496280042850DA85003840E2 /* ViewController.swift in Sources */,
