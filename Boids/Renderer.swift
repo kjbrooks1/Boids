@@ -18,13 +18,13 @@ class Renderer : NSObject, MTKViewDelegate {
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
     var scene: Scene!
-
+    
     init(mtkView: MTKView) {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
         windowSize = WindowSize(size: [Float(view.drawableSize.width), Float(view.drawableSize.height)])
-        
+                
         super.init()
         
         buildPipeline()
@@ -53,12 +53,8 @@ class Renderer : NSObject, MTKViewDelegate {
     
     func makeResources() {
         
-        scene = Scene(instanceCount: 10)
-        let count = scene.boids[0].vertices.count
-        // Create our vertex data and buffer to go with
-        //let b = Boid()
-        vertexBuffer = device.makeBuffer(length: scene.boids.count * count * MemoryLayout<Vertex>.stride, options: [])!
-        //b.copyInstanceData(to: vertexBuffer)
+        scene = Scene(instanceCount: 50)
+        vertexBuffer = device.makeBuffer(length: scene.boids.count * Scene.instanceDataSize, options: [])!
         scene.copyInstanceData(to: vertexBuffer)
     }
     
@@ -71,6 +67,9 @@ class Renderer : NSObject, MTKViewDelegate {
     
     // automatically called to render new content
     func draw(in view: MTKView) {
+        
+        scene.update(with: TimeInterval(1 / 60.0))
+        scene.copyInstanceData(to: vertexBuffer)
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
