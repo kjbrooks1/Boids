@@ -40,8 +40,8 @@ class Boid {
         color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
         
         // random center and make triangle around it
-        let x: Float = 0 //Float.random(in: -1 ..< 1)
-        let y: Float = 0 //Float.random(in: -1 ..< 1)
+        let x: Float = Float.random(in: -1 ..< 1)
+        let y: Float = Float.random(in: -1 ..< 1)
         center = SIMD2<Float>(x, y)
         vertices = makeVertices(centerX: x, centerY: y)
     }

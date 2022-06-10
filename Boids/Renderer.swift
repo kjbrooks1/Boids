@@ -17,6 +17,7 @@ class Renderer : NSObject, MTKViewDelegate {
     
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
+    var scene: Scene!
 
     init(mtkView: MTKView) {
         view = mtkView
@@ -51,10 +52,14 @@ class Renderer : NSObject, MTKViewDelegate {
     }
     
     func makeResources() {
+        
+        scene = Scene(instanceCount: 10)
+        let count = scene.boids[0].vertices.count
         // Create our vertex data and buffer to go with
-        let b = Boid()
-        vertexBuffer = device.makeBuffer(length: 2*b.vertices.count * MemoryLayout<Vertex>.stride, options: [])!
-        b.copyInstanceData(to: vertexBuffer)
+        //let b = Boid()
+        vertexBuffer = device.makeBuffer(length: scene.boids.count * count * MemoryLayout<Vertex>.stride, options: [])!
+        //b.copyInstanceData(to: vertexBuffer)
+        scene.copyInstanceData(to: vertexBuffer)
     }
     
     
@@ -76,7 +81,7 @@ class Renderer : NSObject, MTKViewDelegate {
         // encode drawing commands -> draw triangle
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3*2, instanceCount: 2)   // what to draw
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3*scene.boids.count, instanceCount: scene.boids.count)   // what to draw
 
         // "submit" everything done
         renderEncoder.endEncoding()
