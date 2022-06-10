@@ -27,7 +27,7 @@ class Renderer : NSObject, MTKViewDelegate {
         super.init()
         
         buildPipeline()
-        makeObjects()
+        makeResources()
     }
     
     
@@ -50,21 +50,11 @@ class Renderer : NSObject, MTKViewDelegate {
         pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
-    func boidCoord() -> [Vertex] {
-        let width: Float = 0.05
-        let height: Float = width*2
-        let startx: Float = Float.random(in: -1 ... 1)
-        let starty: Float = Float.random(in: -1 ... 1)
-        print(startx, starty)
-        return [Vertex(color: [1, 1, 1, 1], pos: [startx, starty]),
-                Vertex(color: [1, 1, 1, 1], pos: [startx + (width/2), starty+height]),
-                Vertex(color: [1, 1, 1, 1], pos: [startx - (width/2), starty+height])]
-    }
-    
-    func makeObjects() {
+    func makeResources() {
         // Create our vertex data and buffer to go with
-        let b = Boid(winSize: windowSize)
-        vertexBuffer = device.makeBuffer(bytes: b.vertices, length: b.vertices.count * MemoryLayout<Vertex>.stride, options: [])!
+        let b = Boid()
+        vertexBuffer = device.makeBuffer(length: 2*b.vertices.count * MemoryLayout<Vertex>.stride, options: [])!
+        b.copyInstanceData(to: vertexBuffer)
     }
     
     
@@ -80,13 +70,13 @@ class Renderer : NSObject, MTKViewDelegate {
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2, 0.4, 0.6, 1) // set bg color
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         
         // encode drawing commands -> draw triangle
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)   // what to draw
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3*2, instanceCount: 2)   // what to draw
 
         // "submit" everything done
         renderEncoder.endEncoding()

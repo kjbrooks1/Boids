@@ -31,6 +31,5 @@ vertex VertexOut vertexShader(const device Vertex *vertexArray [[buffer(0)]], un
 
 fragment float4 fragmentShader(VertexOut interpolated [[stage_in]])
 {
-    // TODO: Write fragment shader
     return interpolated.color;
 }

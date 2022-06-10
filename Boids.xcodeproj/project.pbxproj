@@ -19,7 +19,6 @@
 		4962801C2850DBB7003840E2 /* Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4962801B2850DBB7003840E2 /* Renderer.swift */; };
 		4962801E2850E63A003840E2 /* Boid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4962801D2850E639003840E2 /* Boid.swift */; };
 		496280202850E649003840E2 /* Swarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4962801F2850E649003840E2 /* Swarm.swift */; };
-		4962802428512EDA003840E2 /* bridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 4962802328512EDA003840E2 /* bridge.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,7 +38,6 @@
 		4962801F2850E649003840E2 /* Swarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Swarm.swift; sourceTree = "<group>"; };
 		4962802128512A1C003840E2 /* ShaderDefinitions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderDefinitions.h; sourceTree = "<group>"; };
 		4962802228512ED9003840E2 /* Boids-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Boids-Bridging-Header.h"; sourceTree = "<group>"; };
-		4962802328512EDA003840E2 /* bridge.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = bridge.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +75,6 @@
 		496280002850DA85003840E2 /* Boids */ = {
 			isa = PBXGroup;
 			children = (
-				4962802328512EDA003840E2 /* bridge.m */,
 				4962802228512ED9003840E2 /* Boids-Bridging-Header.h */,
 				496280102850DAA4003840E2 /* Shaders.metal */,
 				496280012850DA85003840E2 /* AppDelegate.swift */,
@@ -176,7 +173,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				496280202850E649003840E2 /* Swarm.swift in Sources */,
-				4962802428512EDA003840E2 /* bridge.m in Sources */,
 				4962801C2850DBB7003840E2 /* Renderer.swift in Sources */,
 				496280112850DAA4003840E2 /* Shaders.metal in Sources */,
 				496280042850DA85003840E2 /* ViewController.swift in Sources */,
