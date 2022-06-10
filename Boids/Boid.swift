@@ -10,19 +10,17 @@ import MetalKit
 
 class Boid {
     
-    static let width: Float  = 0.075
-    static let height: Float = 2 * width
-    
     var vertices: [Vertex]!
+    static let instanceDataLength = 3 * MemoryLayout<Vertex>.stride
     private var velocity: Velocity!
     
-    init(winSize: WindowSize) {
+    init() {
         // follow rules in makeVertices func
         vertices = makeVertices()
         
         // starting velocity is randomly selected
         let angle = Float.random(in: 0.0..<(Float.pi * 2))
-        let speed = Float.random(in: 10.0...50.0)
+        let speed = Float.random(in: 1.0...5.0)
         velocity = Velocity(pos: [speed*cos(angle), speed*sin(angle)])
     }
     
@@ -30,12 +28,43 @@ class Boid {
         let startx: Float = Float.random(in: -1 ..< 1)
         let starty: Float = Float.random(in: -1 ..< 1)
         
-        // color (RGBA) is always black
-        // oddball point pos is always random to start
-        // triangle size is always the same accordinng to width and height of boid
-        return [Vertex(color: [0, 0, 0, 1], pos: [startx, starty]),
-                Vertex(color: [0, 0, 0, 1], pos: [startx + (Boid.width/2), starty + Boid.height]),
-                Vertex(color: [0, 0, 0, 1], pos: [startx - (Boid.width/2), starty + Boid.height])]
+        let width: Float = 0.075
+        let height: Float = 2 * width
+        
+        let ax = startx - (width/2)
+        let ay = starty + (height/2)
+        let bx = startx + (width/2)
+        let by = starty + (height/2)
+        let cx = startx
+        let cy = starty - (width/2)
+        
+        return [Vertex(color: [0.6, 0.9, 0.1, 1.0], pos: [cx, cy]),
+                Vertex(color: [0.6, 0.9, 0.1, 1.0], pos: [bx, by]),
+                Vertex(color: [0.6, 0.9, 0.1, 1.0], pos: [ax, ay])]
+    }
+    
+    func copyInstanceData(to buffer: MTLBuffer) {
+        let instanceData = buffer.contents().bindMemory(to: Float.self, capacity: Boid.instanceDataLength)
+        for i in 0 ... 2{
+            instanceData[i] = vertices[i].color.x
+            instanceData[i] = vertices[i].color.y
+            instanceData[i] = vertices[i].color.z
+            instanceData[i] = vertices[i].color.w
+            instanceData[i] = vertices[i].pos.x
+            instanceData[i] = vertices[i].pos.y
+        }
+    }
+    
+    func update(with timestep: TimeInterval) {
+        vertices[0].pos.x += Float(timestep) * velocity.pos.x
+        vertices[0].pos.y += Float(timestep) * velocity.pos.y
+        
+        vertices[1].pos.x += Float(timestep) * velocity.pos.x
+        vertices[1].pos.y += Float(timestep) * velocity.pos.y
+        
+        vertices[2].pos.x += Float(timestep) * velocity.pos.x
+        vertices[2].pos.y += Float(timestep) * velocity.pos.y
+        
     }
     
 }

@@ -6,31 +6,29 @@
 //
 
 #include <metal_stdlib>
-#include "ShaderDefinitions.h"
-
 using namespace metal;
 
-struct VertexOut {
-    float4 color;
-    float4 pos [[position]];
+struct VertexIn {
+    float4 position [[attribute(0)]];
+    float4 center   [[attribute(1)]];
+    float radius    [[attribute(2)]];
+    float4 color    [[attribute(3)]];
 };
 
-vertex VertexOut vertexShader(const device Vertex *vertexArray [[buffer(0)]], unsigned int vid [[vertex_id]])
+struct VertexOut {
+    float4 position [[position]];
+    float4 color;
+};
+
+vertex VertexOut vertex_main(VertexIn in [[stage_in]],
+                             constant float4x4 &transform [[buffer(2)]])
 {
-    // Get the data for the current vertex.
-    Vertex in = vertexArray[vid];
     VertexOut out;
-
-    // Pass the vertex color directly to the rasterizer
+    out.position = transform * float4(in.center.xy + in.radius * in.position.xy, 0.0f, 1.0f);
     out.color = in.color;
-    // Pass the already normalized screen-space coordinates to the rasterizer
-    out.pos = float4(in.pos.x, in.pos.y, 0, 1);
-
     return out;
 }
 
-fragment float4 fragmentShader(VertexOut interpolated [[stage_in]])
-{
-    // TODO: Write fragment shader
-    return interpolated.color;
+fragment float4 fragment_main(VertexOut in [[stage_in]]) {
+    return in.color;
 }

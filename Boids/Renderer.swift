@@ -8,12 +8,11 @@
 import Metal
 import MetalKit
 
-class Renderer : NSObject, MTKViewDelegate {
+class Rendererasdf : NSObject, MTKViewDelegate {
 
     let view: MTKView!                  // view connected to storyboard
     let device: MTLDevice!              // direct connection to GPU
     let commandQueue: MTLCommandQueue!  // ordered list of commands that you tell the GPU to execute
-    let windowSize: WindowSize!
     
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
@@ -22,14 +21,12 @@ class Renderer : NSObject, MTKViewDelegate {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
-        windowSize = WindowSize(size: [Float(view.drawableSize.width), Float(view.drawableSize.height)])
         
         super.init()
         
         buildPipeline()
         makeObjects()
     }
-    
     
     // create our custom rendering pipeline
     func buildPipeline() {
@@ -50,20 +47,9 @@ class Renderer : NSObject, MTKViewDelegate {
         pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
-    func boidCoord() -> [Vertex] {
-        let width: Float = 0.05
-        let height: Float = width*2
-        let startx: Float = Float.random(in: -1 ... 1)
-        let starty: Float = Float.random(in: -1 ... 1)
-        print(startx, starty)
-        return [Vertex(color: [1, 1, 1, 1], pos: [startx, starty]),
-                Vertex(color: [1, 1, 1, 1], pos: [startx + (width/2), starty+height]),
-                Vertex(color: [1, 1, 1, 1], pos: [startx - (width/2), starty+height])]
-    }
-    
     func makeObjects() {
         // Create our vertex data and buffer to go with
-        let b = Boid(winSize: windowSize)
+        let b = Boid()
         vertexBuffer = device.makeBuffer(bytes: b.vertices, length: b.vertices.count * MemoryLayout<Vertex>.stride, options: [])!
     }
     
@@ -80,7 +66,7 @@ class Renderer : NSObject, MTKViewDelegate {
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.2, 0.4, 0.6, 1) // set bg color
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         
         // encode drawing commands -> draw triangle

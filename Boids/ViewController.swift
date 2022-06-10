@@ -17,20 +17,15 @@ class ViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        guard let mtkViewTemp = self.view as? MTKView else {
-            print("View attached to ViewController is not an MTKView!")
-            return
-        }
-        mtkView = mtkViewTemp
+        let device = MTLCreateSystemDefaultDevice()!
         
-        guard let defaultDevice = MTLCreateSystemDefaultDevice() else {
-            print("Metal is not supported on this device")
-            return
-        }
-
-        mtkView.device = defaultDevice
-        renderer = Renderer(mtkView: mtkView)
-        mtkView.delegate = renderer
+        mtkView = MTKView(frame: view.bounds, device: device)
+        mtkView.sampleCount = 4
+        
+        mtkView.autoresizingMask = [.width, .height]
+        view.addSubview(mtkView)
+        
+        renderer = Renderer(view: mtkView)
     }
 
 }
