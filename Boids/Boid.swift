@@ -8,6 +8,17 @@
 import Foundation
 import MetalKit
 
+
+//
+//  Boid.swift
+//  Boids
+//
+//  Created by Katherine Brooks on 6/8/22.
+//
+
+import Foundation
+import MetalKit
+
 class Boid {
     
     var center: SIMD2<Float>!        // [x,y]
@@ -29,8 +40,8 @@ class Boid {
         color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
         
         // random center and make triangle around it
-        let x: Float = Float.random(in: -1 ..< 1)
-        let y: Float = Float.random(in: -1 ..< 1)
+        let x: Float = 0 //Float.random(in: -1 ..< 1)
+        let y: Float = 0 //Float.random(in: -1 ..< 1)
         center = SIMD2<Float>(x, y)
         vertices = makeVertices(centerX: x, centerY: y)
     }
@@ -51,19 +62,21 @@ class Boid {
             SIMD2<Float>(bx,  by),
             SIMD2<Float>(cx,  cy)
         ]
+        print(vert)
         return vert
     }
     
     func copyInstanceData(to buffer: MTLBuffer) {
-        let instanceData = buffer.contents().bindMemory(to: Float.self, capacity: Boid.instanceSize)
-        
-        instanceData[0] = vertices[0].x
-        instanceData[1] = vertices[0].y
-        instanceData[2] = vertices[1].x
-        instanceData[3] = vertices[1].y
-        instanceData[4] = vertices[2].x
-        instanceData[5] = vertices[2].y
-        
+        let vert2 = makeVertices(centerX: 0.5, centerY: 0.5)
+        let test = [Vertex(color: color, pos: vertices[0]),
+                    Vertex(color: color, pos: vertices[1]),
+                    Vertex(color: color, pos: vertices[2]),
+                    Vertex(color: color, pos: vert2[0]),
+                    Vertex(color: color, pos: vert2[1]),
+                    Vertex(color: color, pos: vert2[2]),]
+        print(test)
+        let instanceData = buffer.contents().bindMemory(to: Float.self, capacity: test.count * MemoryLayout<Vertex>.stride)
+        memcpy(instanceData, test, test.count * MemoryLayout<Vertex>.stride)        
     }
     
     /*
