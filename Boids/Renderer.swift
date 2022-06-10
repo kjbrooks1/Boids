@@ -8,7 +8,7 @@
 import Metal
 import MetalKit
 
-class Rendererasdf : NSObject, MTKViewDelegate {
+class Renderer : NSObject, MTKViewDelegate {
 
     let view: MTKView!                  // view connected to storyboard
     let device: MTLDevice!              // direct connection to GPU
@@ -16,41 +16,59 @@ class Rendererasdf : NSObject, MTKViewDelegate {
     
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
-
-    init(mtkView: MTKView) {
-        view = mtkView
-        device = mtkView.device
-        commandQueue = device.makeCommandQueue()
+    
+    init(view: MTKView) {
+        self.view = view
+        self.device = view.device
+        commandQueue = device.makeCommandQueue()!
         
         super.init()
+        self.view.delegate = self
         
         buildPipeline()
-        makeObjects()
+        makeResources()
     }
     
     // create our custom rendering pipeline
     func buildPipeline() {
         // default library connects to Shaders.metal (access pre-compiled Shaders)
         let defaultLibrary = device.makeDefaultLibrary()
-        let vertexFunc = defaultLibrary?.makeFunction(name: "vertexShader")
-        let fragmentFunc = defaultLibrary?.makeFunction(name: "fragmentShader")
+        
+        /* make vertex descriptor
+        let vertexDescriptor = MTLVertexDescriptor()
+        vertexDescriptor.attributes[0].format = .float4 // color
+        vertexDescriptor.attributes[0].offset = MemoryLayout<Float>.stride * 2
+        vertexDescriptor.attributes[0].bufferIndex = 0
+        vertexDescriptor.attributes[1].format = .float2 // vertex data
+        vertexDescriptor.attributes[1].offset = 0
+        vertexDescriptor.attributes[1].bufferIndex = 0
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * 6
+         */
         
         // set up render pipeline configuration
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.vertexFunction = vertexFunc
-        pipelineDescriptor.fragmentFunction = fragmentFunc
+        //pipelineDescriptor.vertexDescriptor = vertexDescriptor
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
-        // Setup the output pixel format to match the pixel format of the metal kit view
-        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        pipelineDescriptor.vertexFunction = defaultLibrary?.makeFunction(name: "vertex_main")
+        pipelineDescriptor.fragmentFunction = defaultLibrary?.makeFunction(name: "fragment_main")
         
         // try to make pipeline
         pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
-    func makeObjects() {
+    func makeResources() {
+        /*
         // Create our vertex data and buffer to go with
         let b = Boid()
-        vertexBuffer = device.makeBuffer(bytes: b.vertices, length: b.vertices.count * MemoryLayout<Vertex>.stride, options: [])!
+        vertexBuffer = device.makeBuffer(length: Boid.instanceSize, options: [.storageModeShared])!
+        b.copyInstanceData(to: vertexBuffer)
+         */
+        var verticies: [Float] = [
+            // r g b a                   x y
+            0.6, 0.9, 0.1, 1.0,    -0.8,  0.4,
+            0.6, 0.9, 0.1, 1.0,     0.4, -0.8,
+            0.6, 0.9, 0.1, 1.0,     0.8,  0.8  ]
+        vertexBuffer = device.makeBuffer(bytes: &verticies, length: MemoryLayout<Float>.stride * verticies.count, options: .storageModeShared)
     }
     
     
@@ -66,13 +84,13 @@ class Rendererasdf : NSObject, MTKViewDelegate {
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(0.0, 0.0, 0.0, 1) // set bg color
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         
         // encode drawing commands -> draw triangle
-        renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)   // what to draw
+        //renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
+        //renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
+        //renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)   // what to draw
 
         // "submit" everything done
         renderEncoder.endEncoding()
