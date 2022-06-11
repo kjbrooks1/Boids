@@ -99,7 +99,10 @@ class Boid {
 class VisionCircle {
     
     static let sideCount = 28
-    static let vertexDataSize = MemoryLayout<SIMD2<Float>>.stride * 3 * sideCount
+    
+    static let verticiesSize = 3 * MemoryLayout<Vertex>.stride
+    static let colorSize = MemoryLayout<SIMD3<Float>>.stride
+    static let circleDataSize = sideCount * 3 * MemoryLayout<Vertex>.stride
     
     var position: SIMD2<Float>
     var velocity: SIMD2<Float>
@@ -107,28 +110,10 @@ class VisionCircle {
     var radius: Float
     
     init(mainGuy: Boid) {
-        position = mainGuy.center
-        velocity = mainGuy.velocity
-        color = SIMD4<Float>(0.86, 0.86 ,0.86, 1.0)
-        radius = 0.5
+        position = mainGuy.vertices[2]
+        velocity = SIMD2<Float>(0.0, 0.0)
+        color = SIMD4<Float>(0.86, 0.86, 0.86, 1.0)
+        radius = 1
     }
-    
-    static func copyVertexData(to buffer: MTLBuffer) {
-        let vertexData = buffer.contents().bindMemory(to: Float.self, capacity: VisionCircle.vertexDataSize / 4)
-        
-        let deltaTheta = (Float.pi * 2) / Float(sideCount)
-        var i = 0
-        for t in 0..<sideCount {
-            let t0 = Float(t) * deltaTheta
-            let t1 = Float(t + 1) * deltaTheta
-            vertexData[i] = 0.0; i += 1
-            vertexData[i] = 0.0; i += 1
-            vertexData[i] = cos(t0); i += 1
-            vertexData[i] = sin(t0); i += 1
-            vertexData[i] = cos(t1); i += 1
-            vertexData[i] = sin(t1); i += 1
-        }
-    }
-    
     
 }

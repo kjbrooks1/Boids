@@ -52,9 +52,8 @@ class Renderer : NSObject, MTKViewDelegate {
     }
     
     func makeResources() {
-        
-        scene = Scene(instanceCount: 50)
-        vertexBuffer = device.makeBuffer(length: scene.boids.count * Scene.instanceDataSize, options: [])!
+        scene = Scene(instanceCount: 10)
+        vertexBuffer = device.makeBuffer(length: scene.boids.count * Scene.instanceDataSize + VisionCircle.circleDataSize, options: [])!
         scene.copyInstanceData(to: vertexBuffer)
     }
     
@@ -80,8 +79,12 @@ class Renderer : NSObject, MTKViewDelegate {
         // encode drawing commands -> draw triangle
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3*scene.boids.count, instanceCount: scene.boids.count)   // what to draw
-
+        
+        
+        let instanceCount = scene.boids.count + VisionCircle.sideCount
+        let vertexCount = instanceCount * 3 * VisionCircle.sideCount
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: instanceCount)   // what to draw
+        
         // "submit" everything done
         renderEncoder.endEncoding()
         commandBuffer.present(view.currentDrawable!)
