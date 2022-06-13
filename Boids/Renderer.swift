@@ -9,7 +9,10 @@ import Metal
 import MetalKit
 
 class Renderer : NSObject, MTKViewDelegate {
-
+    static let maxFramesInFlight = 3
+    let frameSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
+    var frameIndex = 0
+    
     let view: MTKView!                  // view connected to storyboard
     let device: MTLDevice!              // direct connection to GPU
     let commandQueue: MTLCommandQueue!  // ordered list of commands that you tell the GPU to execute
@@ -60,15 +63,16 @@ class Renderer : NSObject, MTKViewDelegate {
     
     // automatically called whenever the view size changes
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-
+        frameIndex = 0
     }
     
     
     // automatically called to render new content
     func draw(in view: MTKView) {
+        frameSemaphore.wait()
         
-        //scene.update(with: TimeInterval(1 / 60.0))
-        //scene.copyInstanceData(to: vertexBuffer)
+        scene.update(with: TimeInterval(1 / 60.0))
+        scene.copyInstanceData(to: vertexBuffer)
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
@@ -88,8 +92,11 @@ class Renderer : NSObject, MTKViewDelegate {
         // "submit" everything done
         renderEncoder.endEncoding()
         commandBuffer.present(view.currentDrawable!)
+        commandBuffer.addCompletedHandler { _ in
+            self.frameSemaphore.signal()
+        }
         commandBuffer.commit()
-        
+        frameIndex = (frameIndex + 1) % Renderer.maxFramesInFlight
     }
     
 }
