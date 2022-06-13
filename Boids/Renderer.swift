@@ -67,8 +67,8 @@ class Renderer : NSObject, MTKViewDelegate {
     // automatically called to render new content
     func draw(in view: MTKView) {
         
-        scene.update(with: TimeInterval(1 / 60.0))
-        scene.copyInstanceData(to: vertexBuffer)
+        //scene.update(with: TimeInterval(1 / 60.0))
+        //scene.copyInstanceData(to: vertexBuffer)
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
