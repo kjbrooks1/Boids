@@ -21,8 +21,8 @@ class Renderer : NSObject, MTKViewDelegate {
     private let constantsStride: Int
     private var currentConstantBufferOffset: Int
 
-    var BOIDS: [BoidMesh]
-    let objCount: Int = 2
+    var boid: Boid
+    var boid2: Boid
     
     init(view: MTKView) {
         guard let device = view.device else {
@@ -37,9 +37,10 @@ class Renderer : NSObject, MTKViewDelegate {
         self.constantsStride = align(constantsSize, upTo: 256)
         self.currentConstantBufferOffset = 0
 
-        
-        BOIDS = []
-        
+        let color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
+        boid = Boid(radius: 0.05, color: color, device: device)
+        boid2 = Boid(radius: 0.05, color: color, device: device)
+                
         super.init()
 
         view.device = device
@@ -78,12 +79,6 @@ class Renderer : NSObject, MTKViewDelegate {
     func makeResources() {
         constantBuffer = device.makeBuffer(length: constantsStride * Renderer.maxFramesInFlight, options: .storageModeShared)
         constantBuffer.label = "Dynamic Constant Buffer"
-        
-        // make a bunch of boids and save in array
-        let color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
-        for _ in 0..<objCount {
-            BOIDS.append(BoidMesh(indexedPlanarPolygonSideCount: 3, radius: 0.05, color: color, device: device))
-        }
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
@@ -92,6 +87,8 @@ class Renderer : NSObject, MTKViewDelegate {
     
     func draw(in view: MTKView) {
         frameSemaphore.wait()
+        
+        boid.update(with: TimeInterval(1 / 60.0))
         
         //scene.update(with: TimeInterval(1 / 60.0))
         //scene.copyInstanceData(to: instanceBuffers[frameIndex])
@@ -106,17 +103,20 @@ class Renderer : NSObject, MTKViewDelegate {
         //renderCommandEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
         
         // add other buffers
-        for b in BOIDS {
-            for (i, vertexBuffer) in b.vertexBuffers.enumerated() {
-                renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
-            }
-
-            if let indexBuffer = b.indexBuffer {
-                renderCommandEncoder.drawIndexedPrimitives(type: b.primitiveType, indexCount: b.indexCount, indexType: b.indexType, indexBuffer: indexBuffer, indexBufferOffset: 0)
-            } else {
-                renderCommandEncoder.drawPrimitives(type: b.primitiveType, vertexStart: 0, vertexCount: b.vertexCount)
-            }
+        var offset = 0
+        for (i, vertexBuffer) in boid.vertexBuffers.enumerated() {
+            renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
+            offset += 1
         }
+        
+        // do transforms
+        let movementMatrix = simd_float4x4(translate2D: SIMD2<Float>(0.1, 0.1))
+        let rotationMatrix = simd_float4x4(rotateZ: .pi / 2)
+        var matrix = movementMatrix * rotationMatrix
+        renderCommandEncoder.setVertexBytes(&matrix, length: MemoryLayout.size(ofValue: matrix), index: 2)
+        
+        // draw something
+        renderCommandEncoder.drawIndexedPrimitives(type: boid.primitiveType, indexCount: boid.indexCount, indexType: boid.indexType, indexBuffer: boid.indexBuffer!, indexBufferOffset: 0)
         
         
         renderCommandEncoder.endEncoding()
