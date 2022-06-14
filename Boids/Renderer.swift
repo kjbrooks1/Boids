@@ -21,7 +21,8 @@ class Renderer : NSObject, MTKViewDelegate {
     private let constantsStride: Int
     private var currentConstantBufferOffset: Int
 
-    let mesh: BoidMesh
+    var BOIDS: [BoidMesh]
+    let objCount: Int = 2
     
     init(view: MTKView) {
         guard let device = view.device else {
@@ -36,8 +37,8 @@ class Renderer : NSObject, MTKViewDelegate {
         self.constantsStride = align(constantsSize, upTo: 256)
         self.currentConstantBufferOffset = 0
 
-        let color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
-        mesh = BoidMesh(indexedPlanarPolygonSideCount: 3, radius: 0.5, color: color, device: device)
+        
+        BOIDS = []
         
         super.init()
 
@@ -52,7 +53,7 @@ class Renderer : NSObject, MTKViewDelegate {
     func makePipeline() {
         let library = device.makeDefaultLibrary()! // connect to Shader
         let renderPipelineDescriptor = MTLRenderPipelineDescriptor()
-        renderPipelineDescriptor.vertexDescriptor = mesh.vertexDescriptor
+        
         renderPipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         
         renderPipelineDescriptor.vertexFunction = library.makeFunction(name: "vertex_main")!
@@ -60,12 +61,29 @@ class Renderer : NSObject, MTKViewDelegate {
         
         renderPipelineDescriptor.rasterSampleCount = view.sampleCount
         
+        let vertexDescriptor = MTLVertexDescriptor()
+        vertexDescriptor.attributes[0].format = .float2 // position
+        vertexDescriptor.attributes[0].offset = 0
+        vertexDescriptor.attributes[0].bufferIndex = 0
+        vertexDescriptor.attributes[1].format = .float4 // color
+        vertexDescriptor.attributes[1].offset = 0
+        vertexDescriptor.attributes[1].bufferIndex = 1
+        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD2<Float>>.stride
+        vertexDescriptor.layouts[1].stride = MemoryLayout<SIMD4<Float>>.stride
+        renderPipelineDescriptor.vertexDescriptor = vertexDescriptor
+        
         renderPipelineState = try! device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
     }
     
     func makeResources() {
         constantBuffer = device.makeBuffer(length: constantsStride * Renderer.maxFramesInFlight, options: .storageModeShared)
         constantBuffer.label = "Dynamic Constant Buffer"
+        
+        // make a bunch of boids and save in array
+        let color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
+        for _ in 0..<objCount {
+            BOIDS.append(BoidMesh(indexedPlanarPolygonSideCount: 3, radius: 0.05, color: color, device: device))
+        }
     }
     
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
@@ -88,15 +106,18 @@ class Renderer : NSObject, MTKViewDelegate {
         //renderCommandEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
         
         // add other buffers
-        for (i, vertexBuffer) in mesh.vertexBuffers.enumerated() {
-            renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
-        }
+        for b in BOIDS {
+            for (i, vertexBuffer) in b.vertexBuffers.enumerated() {
+                renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
+            }
 
-        if let indexBuffer = mesh.indexBuffer {
-            renderCommandEncoder.drawIndexedPrimitives(type: mesh.primitiveType, indexCount: mesh.indexCount, indexType: mesh.indexType, indexBuffer: indexBuffer, indexBufferOffset: 0)
-        } else {
-            renderCommandEncoder.drawPrimitives(type: mesh.primitiveType, vertexStart: 0, vertexCount: mesh.vertexCount)
+            if let indexBuffer = b.indexBuffer {
+                renderCommandEncoder.drawIndexedPrimitives(type: b.primitiveType, indexCount: b.indexCount, indexType: b.indexType, indexBuffer: indexBuffer, indexBufferOffset: 0)
+            } else {
+                renderCommandEncoder.drawPrimitives(type: b.primitiveType, vertexStart: 0, vertexCount: b.vertexCount)
+            }
         }
+        
         
         renderCommandEncoder.endEncoding()
         view.currentDrawable!.present()

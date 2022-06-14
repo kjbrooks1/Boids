@@ -9,29 +9,34 @@ import Foundation
 import Metal
 import simd
 
+class BoidState {
+  var position = SIMD3<Float>(0, 0, 0)
+  var scale: Float = 1.0
+  var rotationAxis = SIMD3<Float>(1, 1, 0)
+  var rotationAngle: Float = 0.0
+  var angularVelocity: Float = 0.0
+}
+
 class BoidMesh {
     
     let vertexBuffers: [MTLBuffer]
-    let vertexDescriptor: MTLVertexDescriptor
     let vertexCount: Int
     let primitiveType: MTLPrimitiveType = .triangle
     let indexBuffer: MTLBuffer?
     let indexType: MTLIndexType = .uint16
     let indexCount: Int
     
-    init(vertexBuffers: [MTLBuffer], vertexDescriptor: MTLVertexDescriptor, vertexCount: Int) {
+    init(vertexBuffers: [MTLBuffer], vertexCount: Int) {
         self.vertexBuffers = vertexBuffers
-        self.vertexDescriptor = vertexDescriptor
         self.vertexCount = vertexCount
         self.indexBuffer = nil
         self.indexCount = 0
     }
 
-    init(vertexBuffers: [MTLBuffer], vertexDescriptor: MTLVertexDescriptor, vertexCount: Int,
+    init(vertexBuffers: [MTLBuffer], vertexCount: Int,
          indexBuffer: MTLBuffer, indexCount: Int)
     {
         self.vertexBuffers = vertexBuffers
-        self.vertexDescriptor = vertexDescriptor
         self.vertexCount = vertexCount
         self.indexBuffer = indexBuffer
         self.indexCount = indexCount
@@ -68,7 +73,7 @@ extension BoidMesh {
         let colorBuffer = device.makeBuffer(bytes: colors, length: MemoryLayout<SIMD4<Float>>.stride * colors.count, options: .storageModeShared)!
         colorBuffer.label = "Vertex Colors"
 
-        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexDescriptor: BoidMesh.defaultVertexDescriptor, vertexCount: positions.count)
+        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexCount: positions.count)
     }
 
     convenience init(indexedPlanarPolygonSideCount sideCount: Int, radius: Float, color: SIMD4<Float>, device: MTLDevice)
@@ -109,19 +114,6 @@ extension BoidMesh {
         let indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.size * indices.count, options: .storageModeShared)!
         indexBuffer.label = "Polygon Indices"
 
-        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexDescriptor: BoidMesh.defaultVertexDescriptor, vertexCount: positions.count, indexBuffer: indexBuffer, indexCount: indices.count)
-    }
-
-    private static var defaultVertexDescriptor: MTLVertexDescriptor {
-        let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.attributes[0].format = .float2 // position
-        vertexDescriptor.attributes[0].offset = 0
-        vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .float4 // color
-        vertexDescriptor.attributes[1].offset = 0
-        vertexDescriptor.attributes[1].bufferIndex = 1
-        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD2<Float>>.stride
-        vertexDescriptor.layouts[1].stride = MemoryLayout<SIMD4<Float>>.stride
-        return vertexDescriptor
+        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexCount: positions.count, indexBuffer: indexBuffer, indexCount: indices.count)
     }
 }
