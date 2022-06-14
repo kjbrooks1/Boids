@@ -1,84 +1,111 @@
-//
-//  Renderer.swift
-//  Boids
-//
-//  Created by Katherine Brooks on 6/8/22.
-//
 
-import Metal
+import Foundation
 import MetalKit
 
-class Rendererasdf : NSObject, MTKViewDelegate {
-
-    let view: MTKView!                  // view connected to storyboard
-    let device: MTLDevice!              // direct connection to GPU
-    let commandQueue: MTLCommandQueue!  // ordered list of commands that you tell the GPU to execute
+class Renderer : NSObject, MTKViewDelegate {
+    static let maxFramesInFlight = 3
     
-    var pipelineState: MTLRenderPipelineState!
+    let view: MTKView
+    let device: MTLDevice
+    let commandQueue: MTLCommandQueue!
+    let frameSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
+    
+    var renderPipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
+    var instanceBuffers: [MTLBuffer] = []
+    var frameIndex = 0
+    var scene: Scene!
+    
+    private var constantBuffer: MTLBuffer!
+    private let constantsSize: Int
+    private let constantsStride: Int
+    private var currentConstantBufferOffset: Int
 
-    init(mtkView: MTKView) {
-        view = mtkView
-        device = mtkView.device
-        commandQueue = device.makeCommandQueue()
+    let mesh: BoidMesh
+    
+    init(view: MTKView) {
+        guard let device = view.device else {
+            fatalError("MTKView should be configured with a device before creating a renderer")
+        }
+        
+        self.view = view
+        self.device = device
+        commandQueue = device.makeCommandQueue()!
+        
+        self.constantsSize = MemoryLayout<simd_float4x4>.size
+        self.constantsStride = align(constantsSize, upTo: 256)
+        self.currentConstantBufferOffset = 0
+
+        let color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
+        mesh = BoidMesh(indexedPlanarPolygonSideCount: 3, radius: 0.5, color: color, device: device)
         
         super.init()
-        
-        buildPipeline()
-        makeObjects()
+
+        view.device = device
+        view.delegate = self
+        view.clearColor = MTLClearColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0)
+
+        makePipeline()
+        makeResources()
     }
     
-    // create our custom rendering pipeline
-    func buildPipeline() {
-        // default library connects to Shaders.metal (access pre-compiled Shaders)
-        let defaultLibrary = device.makeDefaultLibrary()
-        let vertexFunc = defaultLibrary?.makeFunction(name: "vertexShader")
-        let fragmentFunc = defaultLibrary?.makeFunction(name: "fragmentShader")
+    func makePipeline() {
+        let library = device.makeDefaultLibrary()! // connect to Shader
+        let renderPipelineDescriptor = MTLRenderPipelineDescriptor()
+        renderPipelineDescriptor.vertexDescriptor = mesh.vertexDescriptor
+        renderPipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         
-        // set up render pipeline configuration
-        let pipelineDescriptor = MTLRenderPipelineDescriptor()
-        pipelineDescriptor.vertexFunction = vertexFunc
-        pipelineDescriptor.fragmentFunction = fragmentFunc
-        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
-        // Setup the output pixel format to match the pixel format of the metal kit view
-        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
+        renderPipelineDescriptor.vertexFunction = library.makeFunction(name: "vertex_main")!
+        renderPipelineDescriptor.fragmentFunction = library.makeFunction(name: "fragment_main")!
         
-        // try to make pipeline
-        pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        renderPipelineDescriptor.rasterSampleCount = view.sampleCount
+        
+        renderPipelineState = try! device.makeRenderPipelineState(descriptor: renderPipelineDescriptor)
     }
     
-    func makeObjects() {
-        // Create our vertex data and buffer to go with
-        let b = Boid()
-        vertexBuffer = device.makeBuffer(bytes: b.vertices, length: b.vertices.count * MemoryLayout<Vertex>.stride, options: [])!
+    func makeResources() {
+        constantBuffer = device.makeBuffer(length: constantsStride * Renderer.maxFramesInFlight, options: .storageModeShared)
+        constantBuffer.label = "Dynamic Constant Buffer"
     }
     
-    
-    // automatically called whenever the view size changes
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-
     }
     
     
-    // automatically called to render new content
     func draw(in view: MTKView) {
+        frameSemaphore.wait()
         
-        // clearing the screen
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
+        //scene.update(with: TimeInterval(1 / 60.0))
+        //scene.copyInstanceData(to: instanceBuffers[frameIndex])
+        
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
-        guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
+        //renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
         
-        // encode drawing commands -> draw triangle
-        renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)   // what to draw
+        let renderCommandEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
+        renderCommandEncoder.setRenderPipelineState(renderPipelineState)
+        
+        //renderCommandEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
+        
+        // add other buffers
+        for (i, vertexBuffer) in mesh.vertexBuffers.enumerated() {
+            renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
+        }
 
-        // "submit" everything done
-        renderEncoder.endEncoding()
-        commandBuffer.present(view.currentDrawable!)
+        if let indexBuffer = mesh.indexBuffer {
+            renderCommandEncoder.drawIndexedPrimitives(type: mesh.primitiveType, indexCount: mesh.indexCount, indexType: mesh.indexType, indexBuffer: indexBuffer, indexBufferOffset: 0)
+        } else {
+            renderCommandEncoder.drawPrimitives(type: mesh.primitiveType, vertexStart: 0, vertexCount: mesh.vertexCount)
+        }
+        
+        renderCommandEncoder.endEncoding()
+        view.currentDrawable!.present()
+        
+        commandBuffer.addCompletedHandler { _ in
+            self.frameSemaphore.signal()
+        }
         commandBuffer.commit()
         
+        frameIndex += 1
     }
-    
 }

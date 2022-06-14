@@ -9,10 +9,8 @@
 using namespace metal;
 
 struct VertexIn {
-    float4 position [[attribute(0)]];
-    float4 center   [[attribute(1)]];
-    float radius    [[attribute(2)]];
-    float4 color    [[attribute(3)]];
+    float2 position [[attribute(0)]];
+    float4 color    [[attribute(1)]];
 };
 
 struct VertexOut {
@@ -20,11 +18,10 @@ struct VertexOut {
     float4 color;
 };
 
-vertex VertexOut vertex_main(VertexIn in [[stage_in]],
-                             constant float4x4 &transform [[buffer(2)]])
+vertex VertexOut vertex_main(VertexIn in [[stage_in]])
 {
     VertexOut out;
-    out.position = transform * float4(in.center.xy + in.radius * in.position.xy, 0.0f, 1.0f);
+    out.position = float4(in.position, 0.0, 1.0);
     out.color = in.color;
     return out;
 }

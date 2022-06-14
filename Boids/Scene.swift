@@ -73,11 +73,11 @@ class Scene {
     }
     
     func copyInstanceData(to buffer: MTLBuffer) {
-        let instanceData = buffer.contents().bindMemory(to: Float.self,
-                                                        capacity: Shape.instanceDataLength / 4 * shapes.count)
+        let instanceData = buffer.contents().bindMemory(to: Float.self, capacity: Shape.instanceDataLength / 4 * shapes.count)
         
         var i = 0
         for s in shapes {
+            if i == 0 { s.color = SIMD3<Float>(1.0, 0.0, 0.0)}
             instanceData[i] = s.center.x; i += 1
             instanceData[i] = s.center.y; i += 1
             instanceData[i] = s.radius; i += 1
