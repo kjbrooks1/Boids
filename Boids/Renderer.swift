@@ -130,33 +130,19 @@ class Renderer : NSObject, MTKViewDelegate {
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     }
     
+    func sawToothFunc(time: Float) -> Float {
+        let newTime = time + .pi
+        let floorPart = floor((newTime / .pi) + 0.5)
+        return 2 * ( (newTime / .pi) - floorPart )
+    }
     
     // automatically called to render new content
     func draw(in view: MTKView) {
         frameSemaphore.wait()
         
-        // frame data = stuff to change center position
-        // update vertex buffer with new center position & vertices
-        frameIndex = (frameIndex + 1) % Renderer.maxFramesInFlight
         time += Float(TimeInterval(1 / 60.0))
-        
-        let timeBoxed = (time).truncatingRemainder(dividingBy: (2 * Float.pi))
-        print(timeBoxed)
-        if(0 < timeBoxed && timeBoxed <= .pi / 2){
-            // use sin
-            distance = sin(time)
-        }
-        else if(.pi/2 < timeBoxed && timeBoxed < 3 * .pi / 2){
-            // use cos
-            distance = cos(time + .pi / 2)
-        }
-        else if(3 * .pi / 2 < timeBoxed && timeBoxed <= 2 * .pi){
-            // sin sin
-            distance = sin(time)
-        }
-        
+        distance = sawToothFunc(time: time)
         frameData[frameIndex].contents().copyMemory(from: &distance, byteCount: MemoryLayout<Float>.stride)
-        //reinterpret_cast< FrameData * >( pFrameDataBuffer->contents() )->angle = (_angle += 0.01f);
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
@@ -167,21 +153,12 @@ class Renderer : NSObject, MTKViewDelegate {
         // encode drawing commands -> draw triangle
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-
-        renderEncoder.setVertexBuffer(frameData[frameIndex], offset: 0, index: 1)
+        renderEncoder.setVertexBuffer(frameData[frameIndex], offset: 0, index: 1) // what frame buff to use
         
-        // set movement matrix to make everything move together
-        /*
-        var projectionMatrix = simd_float4x4(SIMD4<Float>(1, 0, 0, Float(3*TimeInterval(1 / 60.0))),
-                                             SIMD4<Float>(0, 1, 0, Float(3*TimeInterval(1 / 60.0))),
-                                             SIMD4<Float>(0, 0, 1, 0),
-                                             SIMD4<Float>(0, 0, 0, 1))
-        renderEncoder.setVertexBytes(&projectionMatrix, length: MemoryLayout.size(ofValue: projectionMatrix), index: 2)
-        */
-        
+        // actually draw the stuff
         let instanceCount = 4
         let vertexCount = boid.circleVerticies.count + boid.triangleVertices.count + boid.lineVerticies.count
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: instanceCount)   // what to draw
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: instanceCount)
         
         // "submit" everything done
         renderEncoder.endEncoding()
