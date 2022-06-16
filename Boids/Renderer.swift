@@ -9,16 +9,17 @@ import Metal
 import MetalKit
 
 struct FrameData {
-    var distance: Float
-    //float angle;
+    var distanceX: Float
+    var distanceY: Float
+    var angleRad: Float
 }
 
 class Renderer : NSObject, MTKViewDelegate {
     static let maxFramesInFlight = 3
     let frameSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
     var frameIndex = 0
-    var frameData: [MTLBuffer] = []
-    var distance: Float = 0.0
+    var frameBuffers: [MTLBuffer] = []
+    var frameData: FrameData = FrameData(distanceX: 0.0, distanceY: 0.0, angleRad: 0.0)
     var time: Float = 0.0
     
     let view: MTKView!                  // view connected to storyboard
@@ -39,8 +40,8 @@ class Renderer : NSObject, MTKViewDelegate {
         super.init()
         
         buildPipeline()
+        buildResources()
         buildFrameData()
-        makeResources()
     }
     
     
@@ -72,16 +73,7 @@ class Renderer : NSObject, MTKViewDelegate {
         pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
-    func buildFrameData() {
-        frameData = []
-        for _ in 0..<Renderer.maxFramesInFlight {
-            if let buffer = device.makeBuffer(length: MemoryLayout<FrameData>.stride, options: [.storageModeShared]) {
-                frameData.append(buffer)
-            }
-        }
-    }
-    
-    func makeResources() {
+    func buildResources() {
         boid = Boid()
         var allVertices: [Float] = []
         
@@ -126,6 +118,15 @@ class Renderer : NSObject, MTKViewDelegate {
         vertexBuffer = device.makeBuffer(bytes: allVertices, length: allVerticesSize, options: [])
     }
     
+    func buildFrameData() {
+        frameBuffers = []
+        for _ in 0..<Renderer.maxFramesInFlight {
+            if let buffer = device.makeBuffer(length: MemoryLayout<FrameData>.stride, options: [.storageModeShared]) {
+                frameBuffers.append(buffer)
+            }
+        }
+    }
+    
     // automatically called whenever the view size changes
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     }
@@ -141,8 +142,8 @@ class Renderer : NSObject, MTKViewDelegate {
         frameSemaphore.wait()
         
         time += Float(TimeInterval(1 / 60.0))
-        distance = sawToothFunc(time: time)
-        frameData[frameIndex].contents().copyMemory(from: &distance, byteCount: MemoryLayout<Float>.stride)
+        frameData = FrameData(distanceX: sawToothFunc(time: time), distanceY: sawToothFunc(time: time), angleRad: boid.theta)
+        frameBuffers[frameIndex].contents().copyMemory(from: &frameData, byteCount: MemoryLayout<FrameData>.stride)
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
@@ -153,7 +154,7 @@ class Renderer : NSObject, MTKViewDelegate {
         // encode drawing commands -> draw triangle
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.setVertexBuffer(frameData[frameIndex], offset: 0, index: 1) // what frame buff to use
+        renderEncoder.setVertexBuffer(frameBuffers[frameIndex], offset: 0, index: 1) // what frame buff to use
         
         // actually draw the stuff
         let instanceCount = 4

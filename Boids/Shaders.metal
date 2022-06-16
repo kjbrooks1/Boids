@@ -7,6 +7,7 @@
 
 #include <metal_stdlib>
 #include "ShaderDefinitions.h"
+#include <simd/simd.h>
 
 using namespace metal;
 
@@ -21,16 +22,20 @@ struct VertexOut {
 };
 
 struct FrameData {
-    float distance;
-    //float angle;
+    float distanceX;
+    float distanceY;
+    float angleRad;
 };
 
 vertex VertexOut vertexShader(device const VertexIn *in [[buffer(0)]], constant FrameData* frameData [[buffer(1)]], uint vertexID [[vertex_id]])
 {
-    float dist = frameData->distance;
+    float distX = frameData->distanceX;
+    float distY = frameData->distanceY;
+    float angle = frameData->angleRad;
+    
     VertexIn vin = in[vertexID];
     VertexOut out;
-    out.pos = float4(vin.position.x + dist, vin.position.y + dist, 0, 1);
+    out.pos = float4((vin.position.x + distX * cos(angle)), (vin.position.y + distY * sin(angle)), 0, 1);
     out.color = vin.color;
     return out;
 }

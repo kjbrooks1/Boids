@@ -11,11 +11,11 @@ import MetalKit
 class Boid {
     
     // buffer info
-    var triangleVertices: [SIMD2<Float>]
+    var triangleVertices: [SIMD2<Float>] = []
     var triangleColor: SIMD4<Float> = SIMD4<Float>(0.6, 0.9, 0.1, 1.0) // neon green
-    var lineVerticies: [SIMD2<Float>]
+    var lineVerticies: [SIMD2<Float>] = []
     var lineColor: SIMD4<Float> = SIMD4<Float>(107/255,142/255,35/255, 1.0) // olive green
-    var circleVerticies: [SIMD2<Float>]
+    var circleVerticies: [SIMD2<Float>] = []
     var circleColor: SIMD4<Float> = SIMD4<Float>(0.86, 0.86, 0.86, 1.0) // light grey
     
     // drawing & movement info
@@ -34,14 +34,11 @@ class Boid {
     static let colorSize = MemoryLayout<SIMD3<Float>>.stride
     static let instanceSize = verticiesSize + colorSize
     
-    
-    
     init() {
         // make triangle vertices
-        theta = 0 //.pi / 2  //Float.random(in: 0.0..<(Float.pi * 2))
+        theta = .pi / 2  //Float.random(in: 0.0..<(Float.pi * 2))
         let x: Float = 0 //Float.random(in: -1 ..< 1)
         let y: Float = 0 //Float.random(in: -1 ..< 1)
-        triangleVertices = []
         velocity = SIMD2<Float>(2.0 * sin(theta), 2.0 * cos(theta))
         center = SIMD2<Float>(x, y)
         
@@ -57,46 +54,31 @@ class Boid {
         translationBackMatrix = simd_float3x3(SIMD3<Float>( 1, 0, x),
                                               SIMD3<Float>( 0, 1, y),
                                               SIMD3<Float>( 0, 0, 1))
-        
-        // make line vertices
-        lineVerticies = [ SIMD2<Float>(x-0.004, y-0.15), SIMD2<Float>((x+0.004), y-0.15), SIMD2<Float>(x-0.004, y),
-                          SIMD2<Float>(x+0.004, y), SIMD2<Float>((x+0.004), y-0.15), SIMD2<Float>(x-0.004, y)  ]
-        
-        // make circle vertices
-        circleVerticies = []
-        
+        // make vertices
         triangleVertices = makeTriVertices(centerX: x, centerY: y, angleRad: theta)
         rho = calcRho()
         circleVerticies = makeCircVertices(centerX: x, centerY: y, blindAngle: rho)
-        
-        /*
-        // starting velocity is randomly selected
-        
-         
-        let speed: Float = 1.0
-        velocity = SIMD2<Float>(speed*cos(angle), speed*sin(angle))
-        
-        // color is always the same
-        color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
-        
-        // random center and make triangle around it
-        
-        center = SIMD2<Float>(x, y)
-        
-        fillTriangleData()
-         */
+        lineVerticies = makeLineVertices(centerX: x, centerY: y, angleRad: theta)
     }
     
     func makeTriVertices(centerX: Float, centerY: Float, angleRad: Float) -> [SIMD2<Float>] {
-        let width: Float = 0.065
-        let height: Float = 2 * width
+        let width: Float = 0.07
+        let height: Float = 1.5 * width
         
+        /*
         let ax = centerX - (width/2)
         let ay = centerY + (height/2)
         let bx = centerX + (width/2)
         let by = centerY + (height/2)
         let cx = centerX
         let cy = centerY - (width/2)
+         */
+        let ax = centerX - (height/2)
+        let ay = centerY + (width/2)
+        let bx = centerX - (height/2)
+        let by = centerY - (width/2)
+        let cx = centerX + (height/2)
+        let cy = centerY
         
         let transformMatrix = translationOriginMatrix * rotationMatrix * translationBackMatrix
         
@@ -118,9 +100,9 @@ class Boid {
             let t1 = Float(t + 1) * deltaTheta
                  
             var transformMatrix = translationOriginMatrix * rotationMatrix * translationBackMatrix
-            transformMatrix = transformMatrix * (simd_float3x3(SIMD3<Float>(cos(.pi / 2 + blindAngle / 2), -sin(.pi / 2 + blindAngle / 2), 0),
-                                                               SIMD3<Float>(sin(.pi / 2 + blindAngle / 2),  cos(.pi / 2 + blindAngle / 2), 0),
-                                                               SIMD3<Float>(           0,             0, 1)))
+            transformMatrix = transformMatrix * (simd_float3x3(SIMD3<Float>(cos(.pi + blindAngle / 2), -sin(.pi + blindAngle / 2), 0),
+                                                               SIMD3<Float>(sin(.pi + blindAngle / 2),  cos(.pi + blindAngle / 2), 0),
+                                                               SIMD3<Float>(0, 0, 1)))
             
             let vert1 = simd_mul(SIMD3<Float>(centerX, centerY, 1), transformMatrix)
             let vert2 = simd_mul(SIMD3<Float>(centerX+cos(t0)*0.4, centerY+sin(t0)*0.4, 1), transformMatrix)
@@ -131,6 +113,23 @@ class Boid {
             vertices.append(SIMD2<Float>(vert3.x,  vert3.y))
         }
         return vertices
+    }
+    
+    func makeLineVertices(centerX: Float, centerY: Float, angleRad: Float) -> [SIMD2<Float>] {
+        let transformMatrix = translationOriginMatrix * rotationMatrix * translationBackMatrix
+        let vert1 = simd_mul(SIMD3<Float>(centerX+0.15, centerY-0.004, 1), transformMatrix)
+        let vert2 = simd_mul(SIMD3<Float>(centerX+0.15, centerY+0.004, 1), transformMatrix)
+        let vert3 = simd_mul(SIMD3<Float>(centerX,      centerY-0.004, 1), transformMatrix)
+        let vert4 = simd_mul(SIMD3<Float>(centerX,      centerY+0.004, 1), transformMatrix)
+        let vert5 = simd_mul(SIMD3<Float>(centerX+0.15, centerY+0.004, 1), transformMatrix)
+        let vert6 = simd_mul(SIMD3<Float>(centerX,      centerY-0.004, 1), transformMatrix)
+        
+        return [ SIMD2<Float>(vert1.x,  vert1.y),
+                 SIMD2<Float>(vert2.x,  vert2.y),
+                 SIMD2<Float>(vert3.x,  vert3.y),
+                 SIMD2<Float>(vert4.x,  vert4.y),
+                 SIMD2<Float>(vert5.x,  vert5.y),
+                 SIMD2<Float>(vert6.x,  vert6.y),]
     }
     
     func calcRho() -> Float {
