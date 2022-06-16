@@ -9,41 +9,25 @@ import Metal
 import MetalKit
 
 class Renderer : NSObject, MTKViewDelegate {
-    static let maxFramesInFlight = 3 // triple buffering
-    // so CPU and GPU don't go at same time
-    // lets us encode up to three frames, but then waits until one completes before beginning the next
-    // "counting semaphore"
+    static let maxFramesInFlight = 3
     let frameSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
-    private var frameIndex: Int // keeps track of which frame we are at
+    var frameIndex = 0
     
-    let view: MTKView                  // view connected to storyboard
+    let view: MTKView!                  // view connected to storyboard
     let device: MTLDevice!              // direct connection to GPU
     let commandQueue: MTLCommandQueue!  // ordered list of commands that you tell the GPU to execute
     let windowSize: WindowSize!
     
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
-    var swarm: Swarm!
+    var scene: Scene!
     
-    var time: TimeInterval = 0.0
-    
-    private var constantsBuffer: MTLBuffer!
-    private let constantsSize: Int
-    private let constantsStride: Int
-    private var constantsBufferOffset: Int
-
     init(mtkView: MTKView) {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
         windowSize = WindowSize(size: [Float(view.drawableSize.width), Float(view.drawableSize.height)])
-        
-        // constants buffer stores 3 frames worth of constants
-        frameIndex = 0
-        constantsSize = MemoryLayout<SIMD2<Float>>.size
-        constantsStride = Renderer.align(constantsSize, upTo: 256) // make much bigger than necessary
-        constantsBufferOffset = 0
-        
+       
         super.init()
         
         buildPipeline()
@@ -83,38 +67,17 @@ class Renderer : NSObject, MTKViewDelegate {
         // try to make pipeline
         pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
-
-    func makeResources() {
-        // Create our vertex data and buffer to go with
-        swarm = Swarm(winSize: windowSize, boidCount: 1)
-        let b: Boid = swarm.boids[0]
-        // makeBuffer -> makes buffer and copies vertices all in one step
-        vertexBuffer = device.makeBuffer(length: b.verticesDataSize, options: .storageModeShared)
-        b.copyVertexData(to: vertexBuffer)
-        
-        // make constants buffer - used for animation (nothing in it tho)
-        constantsBuffer = device.makeBuffer(length: constantsStride * Renderer.maxFramesInFlight, options: .storageModeShared)
-    }
     
-    func updateConstants() {
-        time += 1.0 / Double(view.preferredFramesPerSecond)
-        let t = Float(time)
-        
-        let speedFactor: Float = 1.5
-        let rotationAngle = Float(fmod(speedFactor * t, .pi * 2))
-        let rotationMagnitude: Float = 0.05
-        var positionOffset = rotationMagnitude * SIMD2<Float>(cos(rotationAngle), 1)
-        
-        constantsBufferOffset = (frameIndex % Renderer.maxFramesInFlight) * constantsStride
-        let constants = constantsBuffer.contents().advanced(by: constantsBufferOffset)
-        constants.copyMemory(from: &positionOffset, byteCount: constantsSize)
-        
+    func makeResources() {
+        scene = Scene(instanceCount: 10)
+        vertexBuffer = device.makeBuffer(length: scene.boids.count * Scene.instanceDataSize + VisionCircle.circleDataSize, options: [])!
+        scene.copyInstanceData(to: vertexBuffer)
     }
     
     
     // automatically called whenever the view size changes
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
-
+        frameIndex = 0
     }
     
     
@@ -122,14 +85,8 @@ class Renderer : NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         frameSemaphore.wait()
         
-        
-        for b in swarm.boids {
-            b.update(with: TimeInterval(1 / 60.0))
-            b.copyVertexData(to: vertexBuffer)
-        }
-         
-       
-        updateConstants()
+        scene.update(with: TimeInterval(1 / 60.0))
+        scene.copyInstanceData(to: vertexBuffer)
         
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
@@ -142,15 +99,20 @@ class Renderer : NSObject, MTKViewDelegate {
         //makeResources()
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
-        renderEncoder.setVertexBuffer(constantsBuffer, offset: constantsBufferOffset, index: 1)
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)   // what to draw
-
+        
+        
+        let instanceCount = scene.boids.count + VisionCircle.sideCount
+        let vertexCount = instanceCount * 3 * VisionCircle.sideCount
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: instanceCount)   // what to draw
+        
         // "submit" everything done
         renderEncoder.endEncoding()
         commandBuffer.present(view.currentDrawable!)
-        commandBuffer.addCompletedHandler { _ in self.frameSemaphore.signal() }; frameIndex += 1
+        commandBuffer.addCompletedHandler { _ in
+            self.frameSemaphore.signal()
+        }
         commandBuffer.commit()
-        
+        frameIndex = (frameIndex + 1) % Renderer.maxFramesInFlight
     }
     
 }

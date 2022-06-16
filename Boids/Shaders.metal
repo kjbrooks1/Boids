@@ -30,8 +30,7 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]], constant float2 &position
     return out;
 }
 
-fragment float4 fragment_main(VertexOut in [[stage_in]]) {
-    // simply return vertex given color
-    // rasterizer automatically colors each fragment by interpolating among the vertices
-    return in.color;
+fragment float4 fragmentShader(VertexOut interpolated [[stage_in]])
+{
+    return interpolated.color;
 }
