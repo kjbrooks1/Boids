@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		49595E2F28525FF700C4143C /* Math.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49595E2E28525FF700C4143C /* Math.swift */; };
 		496280022850DA85003840E2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 496280012850DA85003840E2 /* AppDelegate.swift */; };
 		496280042850DA85003840E2 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 496280032850DA85003840E2 /* ViewController.swift */; };
 		496280062850DA87003840E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 496280052850DA87003840E2 /* Assets.xcassets */; };
@@ -23,7 +22,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		49595E2E28525FF700C4143C /* Math.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Math.swift; sourceTree = "<group>"; };
 		49627FFE2850DA85003840E2 /* Boids.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Boids.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		496280012850DA85003840E2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		496280032850DA85003840E2 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -77,11 +75,6 @@
 		496280002850DA85003840E2 /* Boids */ = {
 			isa = PBXGroup;
 			children = (
-<<<<<<< HEAD
-				49595E2E28525FF700C4143C /* Math.swift */,
-				4962802328512EDA003840E2 /* bridge.m */,
-=======
->>>>>>> noninstancing
 				4962802228512ED9003840E2 /* Boids-Bridging-Header.h */,
 				496280102850DAA4003840E2 /* Shaders.metal */,
 				4962801B2850DBB7003840E2 /* Renderer.swift */,
@@ -185,7 +178,6 @@
 				496280042850DA85003840E2 /* ViewController.swift in Sources */,
 				496280022850DA85003840E2 /* AppDelegate.swift in Sources */,
 				4962801E2850E63A003840E2 /* Boid.swift in Sources */,
-				49595E2F28525FF700C4143C /* Math.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
