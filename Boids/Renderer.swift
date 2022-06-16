@@ -59,8 +59,8 @@ class Renderer : NSObject, MTKViewDelegate {
         // set up render pipeline configuration
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
         pipelineDescriptor.vertexDescriptor = vertexDescriptor
-        pipelineDescriptor.vertexFunction = defaultLibrary?.makeFunction(name: "vertex_main")!
-        pipelineDescriptor.fragmentFunction = defaultLibrary?.makeFunction(name: "fragment_main")!
+        pipelineDescriptor.vertexFunction = defaultLibrary?.makeFunction(name: "vertexShader")!
+        pipelineDescriptor.fragmentFunction = defaultLibrary?.makeFunction(name: "fragmentShader")!
         // Setup the output pixel format to match the pixel format of the metal kit view
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         
