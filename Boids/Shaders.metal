@@ -27,11 +27,11 @@ struct FrameData {
     float angleRad;
 };
 
-vertex VertexOut vertexShader(device const VertexIn *in [[buffer(0)]], constant FrameData* frameData [[buffer(1)]], uint vertexID [[vertex_id]])
+vertex VertexOut vertexShader(device const VertexIn *in [[buffer(0)]], constant FrameData* frameData [[buffer(1)]], uint vertexID [[vertex_id]], uint instanceId [[instance_id]])
 {
-    float distX = frameData->distanceX;
-    float distY = frameData->distanceY;
-    float angle = frameData->angleRad;
+    float distX = frameData[instanceId].distanceX;
+    float distY = frameData[instanceId].distanceY;
+    float angle = frameData[instanceId].angleRad;
     
     VertexIn vin = in[vertexID];
     VertexOut out;

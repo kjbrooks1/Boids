@@ -36,9 +36,9 @@ class Boid {
     
     init() {
         // make triangle vertices
-        theta = .pi / 2  //Float.random(in: 0.0..<(Float.pi * 2))
-        let x: Float = 0 //Float.random(in: -1 ..< 1)
-        let y: Float = 0 //Float.random(in: -1 ..< 1)
+        theta = Float.random(in: 0.0..<(Float.pi * 2))
+        let x: Float = Float.random(in: -1 ..< 1)
+        let y: Float = Float.random(in: -1 ..< 1)
         velocity = SIMD2<Float>(2.0 * sin(theta), 2.0 * cos(theta))
         center = SIMD2<Float>(x, y)
         
@@ -99,10 +99,9 @@ class Boid {
             let t0 = Float(t) * deltaTheta
             let t1 = Float(t + 1) * deltaTheta
                  
-            var transformMatrix = translationOriginMatrix * rotationMatrix * translationBackMatrix
-            transformMatrix = transformMatrix * (simd_float3x3(SIMD3<Float>(cos(.pi + blindAngle / 2), -sin(.pi + blindAngle / 2), 0),
-                                                               SIMD3<Float>(sin(.pi + blindAngle / 2),  cos(.pi + blindAngle / 2), 0),
-                                                               SIMD3<Float>(0, 0, 1)))
+            let transformMatrix = translationOriginMatrix * simd_float3x3(SIMD3<Float>(cos(theta + .pi + blindAngle / 2), -sin(theta + .pi + blindAngle / 2), 0),
+                                                                          SIMD3<Float>(sin(theta + .pi + blindAngle / 2),  cos(theta + .pi + blindAngle / 2), 0),
+                                                                          SIMD3<Float>(0, 0, 1)) * translationBackMatrix
             
             let vert1 = simd_mul(SIMD3<Float>(centerX, centerY, 1), transformMatrix)
             let vert2 = simd_mul(SIMD3<Float>(centerX+cos(t0)*0.4, centerY+sin(t0)*0.4, 1), transformMatrix)

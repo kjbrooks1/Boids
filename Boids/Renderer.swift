@@ -19,7 +19,7 @@ class Renderer : NSObject, MTKViewDelegate {
     let frameSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
     var frameIndex = 0
     var frameBuffers: [MTLBuffer] = []
-    var frameData: FrameData = FrameData(distanceX: 0.0, distanceY: 0.0, angleRad: 0.0)
+    var allFrameData: [FrameData] = []
     var time: Float = 0.0
     
     let view: MTKView!                  // view connected to storyboard
@@ -29,14 +29,19 @@ class Renderer : NSObject, MTKViewDelegate {
     
     var pipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
-    var boid: Boid!
+    
+    var BOIDS: [Boid] = []
+    var boidCount: Int = 0
+    
+    var allVerticesCount: Int = 0
+    var allVerticesSize: Int = 0
     
     init(mtkView: MTKView) {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
         windowSize = WindowSize(size: [Float(view.drawableSize.width), Float(view.drawableSize.height)])
-                
+        
         super.init()
         
         buildPipeline()
@@ -74,54 +79,59 @@ class Renderer : NSObject, MTKViewDelegate {
     }
     
     func buildResources() {
-        boid = Boid()
+        boidCount = 2
         var allVertices: [Float] = []
-        
-        // draw circle
-        for a in 0..<boid.circleVerticies.count {
-            allVertices.append(boid.circleVerticies[a].x)
-            allVertices.append(boid.circleVerticies[a].y)
-            allVertices.append(0.0) // padding
-            allVertices.append(0.0) // padding
-            allVertices.append(boid.circleColor.x)
-            allVertices.append(boid.circleColor.y)
-            allVertices.append(boid.circleColor.z)
-            allVertices.append(boid.circleColor.w)
+        BOIDS = []
+        for _ in 0..<boidCount {
+            let boid = Boid()
+            BOIDS.append(boid)
+            // draw circle
+            for a in 0..<boid.circleVerticies.count {
+                allVertices.append(boid.circleVerticies[a].x)
+                allVertices.append(boid.circleVerticies[a].y)
+                allVertices.append(0.0) // padding
+                allVertices.append(0.0) // padding
+                allVertices.append(boid.circleColor.x)
+                allVertices.append(boid.circleColor.y)
+                allVertices.append(boid.circleColor.z)
+                allVertices.append(boid.circleColor.w)
+            }
+            
+            // draw line
+            for a in 0..<boid.lineVerticies.count {
+                allVertices.append(boid.lineVerticies[a].x)
+                allVertices.append(boid.lineVerticies[a].y)
+                allVertices.append(0.0) // padding
+                allVertices.append(0.0) // padding
+                allVertices.append(boid.lineColor.x)
+                allVertices.append(boid.lineColor.y)
+                allVertices.append(boid.lineColor.z)
+                allVertices.append(boid.lineColor.w)
+            }
+            
+            // draw triangle
+            for a in 0..<boid.triangleVertices.count {
+                allVertices.append(boid.triangleVertices[a].x)
+                allVertices.append(boid.triangleVertices[a].y)
+                allVertices.append(0.0) // padding
+                allVertices.append(0.0) // padding
+                allVertices.append(boid.triangleColor.x)
+                allVertices.append(boid.triangleColor.y)
+                allVertices.append(boid.triangleColor.z)
+                allVertices.append(boid.triangleColor.w)
+            }
+            
+            allVerticesCount += (boid.triangleVertices.count + boid.lineVerticies.count + boid.circleVerticies.count)
+            allVerticesSize += Int(2 * allVerticesCount * MemoryLayout<SIMD4<Float>>.stride)
         }
-        
-        // draw line
-        for a in 0..<boid.lineVerticies.count {
-            allVertices.append(boid.lineVerticies[a].x)
-            allVertices.append(boid.lineVerticies[a].y)
-            allVertices.append(0.0) // padding
-            allVertices.append(0.0) // padding
-            allVertices.append(boid.lineColor.x)
-            allVertices.append(boid.lineColor.y)
-            allVertices.append(boid.lineColor.z)
-            allVertices.append(boid.lineColor.w)
-        }
-        
-        // draw triangle
-        for a in 0..<boid.triangleVertices.count {
-            allVertices.append(boid.triangleVertices[a].x)
-            allVertices.append(boid.triangleVertices[a].y)
-            allVertices.append(0.0) // padding
-            allVertices.append(0.0) // padding
-            allVertices.append(boid.triangleColor.x)
-            allVertices.append(boid.triangleColor.y)
-            allVertices.append(boid.triangleColor.z)
-            allVertices.append(boid.triangleColor.w)
-        }
-        let count: Int = (boid.triangleVertices.count + boid.lineVerticies.count + boid.circleVerticies.count)
-        let allVerticesSize: Int = Int(2 * count * MemoryLayout<SIMD4<Float>>.stride)
-        
         vertexBuffer = device.makeBuffer(bytes: allVertices, length: allVerticesSize, options: [])
     }
     
     func buildFrameData() {
         frameBuffers = []
+        let frameDataSize = Renderer.maxFramesInFlight * boidCount * MemoryLayout<FrameData>.stride
         for _ in 0..<Renderer.maxFramesInFlight {
-            if let buffer = device.makeBuffer(length: MemoryLayout<FrameData>.stride, options: [.storageModeShared]) {
+            if let buffer = device.makeBuffer(length: frameDataSize, options: [.storageModeShared]) {
                 frameBuffers.append(buffer)
             }
         }
@@ -131,7 +141,7 @@ class Renderer : NSObject, MTKViewDelegate {
     func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     }
     
-    func sawToothFunc(time: Float) -> Float {
+    func sawToothFunc(time: Float, speed: Float) -> Float {
         let newTime = time + .pi
         let floorPart = floor((newTime / .pi) + 0.5)
         return 2 * ( (newTime / .pi) - floorPart )
@@ -142,9 +152,39 @@ class Renderer : NSObject, MTKViewDelegate {
         frameSemaphore.wait()
         
         time += Float(TimeInterval(1 / 60.0))
-        frameData = FrameData(distanceX: sawToothFunc(time: time), distanceY: sawToothFunc(time: time), angleRad: boid.theta)
-        frameBuffers[frameIndex].contents().copyMemory(from: &frameData, byteCount: MemoryLayout<FrameData>.stride)
+        allFrameData = []
+        for i in 0..<boidCount {
+            print(i)
+            let frameData = FrameData(distanceX: sawToothFunc(time: time, speed: BOIDS[i].velocity.x), distanceY: sawToothFunc(time: time, speed: BOIDS[i].velocity.y), angleRad: BOIDS[i].theta)
+            allFrameData.append(FrameData(distanceX: sawToothFunc(time: time, speed: BOIDS[i].velocity.x), distanceY: sawToothFunc(time: time, speed: BOIDS[i].velocity.x), angleRad: BOIDS[i].theta)) // something wrong with angleRad....
+            //memcpy(frameBuffers[frameIndex], frameData, MemoryLayout<FrameData>.stride)
+        }
+        print("bcount=",boidCount)
+        print(allFrameData)
+        print("----------")
+        frameBuffers[frameIndex].contents().copyMemory(from: &allFrameData, byteCount: MemoryLayout<FrameData>.stride * allFrameData.count)
         
+        /*
+         shader_types::InstanceData* pInstanceData = reinterpret_cast< shader_types::InstanceData *>( pInstanceDataBuffer->contents() );
+         for ( size_t i = 0; i < kNumInstances; ++i )
+         {
+             float iDivNumInstances = i / (float)kNumInstances;
+             float xoff = (iDivNumInstances * 2.0f - 1.0f) + (1.f/kNumInstances);
+             float yoff = sin( ( iDivNumInstances + _angle ) * 2.0f * M_PI);
+             pInstanceData[ i ].instanceTransform = (float4x4){ (float4){ scl * sinf(_angle), scl * cosf(_angle), 0.f, 0.f },
+                                                                (float4){ scl * cosf(_angle), scl * -sinf(_angle), 0.f, 0.f },
+                                                                (float4){ 0.f, 0.f, scl, 0.f },
+                                                                (float4){ xoff, yoff, 0.f, 1.f } };
+
+             float r = iDivNumInstances;
+             float g = 1.0f - r;
+             float b = sinf( M_PI * 2.0f * iDivNumInstances );
+             pInstanceData[ i ].instanceColor = (float4){ r, g, b, 1.0f };
+         }
+         pInstanceDataBuffer->didModifyRange( NS::Range::Make( 0, pInstanceDataBuffer->length() ) );
+
+
+         */
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
@@ -157,9 +197,7 @@ class Renderer : NSObject, MTKViewDelegate {
         renderEncoder.setVertexBuffer(frameBuffers[frameIndex], offset: 0, index: 1) // what frame buff to use
         
         // actually draw the stuff
-        let instanceCount = 4
-        let vertexCount = boid.circleVerticies.count + boid.triangleVertices.count + boid.lineVerticies.count
-        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: instanceCount)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: allVerticesCount, instanceCount: boidCount)
         
         // "submit" everything done
         renderEncoder.endEncoding()
