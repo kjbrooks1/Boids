@@ -34,6 +34,8 @@ class Boid {
     var angleB: Float = 0
     var angleC: Float = 0
     
+    var transformationMatrix: simd_float3x3!
+    
     static let verticiesSize = 3*MemoryLayout<SIMD2<Float>>.stride
     static let colorSize = MemoryLayout<SIMD3<Float>>.stride
     static let instanceSize = verticiesSize + colorSize
@@ -47,59 +49,48 @@ class Boid {
         // color is always the same
         color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
         
+        
         // random center and make triangle around it
         let x: Float = Float.random(in: -1 ..< 1)
         let y: Float = Float.random(in: -1 ..< 1)
         center = SIMD2<Float>(x, y)
-        vertices = makeVertices(centerX: x, centerY: y, angleRad: angle)
+        
+        let translationOriginMatrix = simd_float3x3( SIMD3<Float>( 1, 0, -x),
+                                                     SIMD3<Float>( 0, 1, -y),
+                                                     SIMD3<Float>( 0, 0,       1)  )
+        
+        let rotationMatrix = simd_float3x3( SIMD3<Float>(cos(angle + 90 * (.pi / 180)), -sin(angle + 90 * (.pi / 180)), 0),
+                                            SIMD3<Float>(sin(angle + 90 * (.pi / 180)),  cos(angle + 90 * (.pi / 180)), 0),
+                                            SIMD3<Float>(         0,           0, 1)  )
+        
+        let translationBackMatrix = simd_float3x3( SIMD3<Float>( 1, 0, x),
+                                                   SIMD3<Float>( 0, 1, y),
+                                                   SIMD3<Float>( 0, 0,       1)  )
+        transformationMatrix = translationOriginMatrix * rotationMatrix * translationBackMatrix
+
+        
+        vertices = makeVertices(centerX: x, centerY: y, angleRad: angle, transMatrix: transformationMatrix)
         fillTriangleData()
     }
     
-    func makeVertices(centerX: Float, centerY: Float, angleRad: Float) -> [SIMD2<Float>] {
-        let width: Float = 0.05
-        let height: Float = 2 * width
-        let newAngleRad = angleRad + 90 * (.pi / 180)
-        
-        let ax = centerX - (width/2)
-        let ay = centerY + (height/2)
-        let bx = centerX + (width/2)
-        let by = centerY + (height/2)
+    func makeVertices(centerX: Float, centerY: Float, angleRad: Float, transMatrix: simd_float3x3) -> [SIMD2<Float>] {        
+        let ax = centerX - 0.1 * cos(.pi/2.5)
+        let ay = centerY + 0.1 * sin(.pi/2.5)
+        let bx = centerX + 0.1 * cos(.pi/2.5)
+        let by = centerY + 0.1 * sin(.pi/2.5)
         let cx = centerX
-        let cy = centerY - (width/2)
+        let cy = centerY
         
-        let translationOriginMatrix = simd_float3x3( SIMD3<Float>( 1, 0, -centerX),
-                                                     SIMD3<Float>( 0, 1, -centerY),
-                                                     SIMD3<Float>( 0, 0,       1)  )
         
-        let rotationMatrix = simd_float3x3( SIMD3<Float>(cos(newAngleRad), -sin(newAngleRad), 0),
-                                            SIMD3<Float>(sin(newAngleRad),  cos(newAngleRad), 0),
-                                            SIMD3<Float>(         0,           0, 1)  )
-        
-        let translationBackMatrix = simd_float3x3( SIMD3<Float>( 1, 0, centerX),
-                                                   SIMD3<Float>( 0, 1, centerY),
-                                                   SIMD3<Float>( 0, 0,       1)  )
-        
-        let vert0 = [
-            simd_mul( SIMD3<Float>(ax,  ay, 1), translationOriginMatrix),
-            simd_mul( SIMD3<Float>(bx,  by, 1), translationOriginMatrix),
-            simd_mul( SIMD3<Float>(cx,  cy, 1), translationOriginMatrix)
+        let temp = [
+            simd_mul( SIMD3<Float>(ax,  ay, 1), transMatrix),
+            simd_mul( SIMD3<Float>(bx,  by, 1), transMatrix),
+            simd_mul( SIMD3<Float>(cx,  cy, 1), transMatrix)
         ]
         
-        let vert1 = [
-            simd_mul( vert0[0], rotationMatrix),
-            simd_mul( vert0[1], rotationMatrix),
-            simd_mul( vert0[2], rotationMatrix)
-        ]
-        
-        let vert3 = [
-            simd_mul( vert1[0], translationBackMatrix),
-            simd_mul( vert1[1], translationBackMatrix),
-            simd_mul( vert1[2], translationBackMatrix)
-        ]
-        
-        return [ SIMD2<Float>(vert3[0].x,  vert3[0].y),     // vertex A
-                 SIMD2<Float>(vert3[1].x,  vert3[1].y),     // vertex B
-                 SIMD2<Float>(vert3[2].x,  vert3[2].y)  ]   // vertex C
+        return [ SIMD2<Float>(temp[0].x,  temp[0].y),     // vertex A
+                 SIMD2<Float>(temp[1].x,  temp[1].y),     // vertex B
+                 SIMD2<Float>(temp[2].x,  temp[2].y)  ]   // vertex C
     }
     
     func fillTriangleData() {
@@ -138,59 +129,31 @@ class VisionCircle {
     init(mainGuy: Boid) {
         self.mainGuy = mainGuy
         position = mainGuy.center
-        velocity = SIMD2<Float>(0.0, 0.0)
+        velocity = mainGuy.velocity
         color = SIMD4<Float>(0.86, 0.86, 0.86, 0.5)
         radius = 2
-        vertices = makeVertices()
+        vertices = makeVertices(mainGuy: mainGuy, transMatrix: mainGuy.transformationMatrix)
     }
     
-    func makeVertices() -> [SIMD2<Float>] {
-        
+    func makeVertices(mainGuy: Boid, transMatrix: simd_float3x3) -> [SIMD2<Float>] {
+        var allVert: [SIMD2<Float>] = []
+        position = mainGuy.center
+        velocity = mainGuy.velocity
         let angle = mainGuy.angleC
         let deltaTheta = (2 * Float.pi - angle) / Float(VisionCircle.sideCount)
-        
-        for t in 0 ..< VisionCircle.sideCount {
+        for t in 0..<VisionCircle.sideCount {
             let t0 = Float(t) * deltaTheta
             let t1 = Float(t + 1) * deltaTheta
                  
-            let translationOriginMatrix = simd_float3x3( SIMD3<Float>( 1, 0, -position.x),
-                                                         SIMD3<Float>( 0, 1, -position.y),
-                                                         SIMD3<Float>( 0, 0,       1)  )
-            
-            let rotationMatrix = simd_float3x3( SIMD3<Float>(cos(angle), -sin(angle), 0),
-                                                SIMD3<Float>(sin(angle),  cos(angle), 0),
-                                                SIMD3<Float>(         0,           0, 1)  )
-            
-            let translationBackMatrix = simd_float3x3( SIMD3<Float>( 1, 0, position.x),
-                                                       SIMD3<Float>( 0, 1, position.y),
-                                                       SIMD3<Float>( 0, 0,       1)  )
-            
-            let vert0 = [
-                simd_mul( SIMD3<Float>(position.x, position.y, 1), translationOriginMatrix),
-                simd_mul( SIMD3<Float>(position.x+cos(t0)*0.25, position.y+sin(t0)*0.25, 1), translationOriginMatrix),
-                simd_mul( SIMD3<Float>(position.x+cos(t1)*0.25, position.y+sin(t1)*0.25, 1), translationOriginMatrix)
+            let temp = [
+                simd_mul( SIMD3<Float>(position.x, position.y, 1), transMatrix),
+                simd_mul( SIMD3<Float>(position.x+cos(t0 + .pi / 2 + angle / 2)*0.35, position.y+sin(t0 + .pi / 2 + angle / 2)*0.35, 1), transMatrix),
+                simd_mul( SIMD3<Float>(position.x+cos(t1 + .pi / 2 + angle / 2)*0.35, position.y+sin(t1 + .pi / 2 + angle / 2)*0.35, 1), transMatrix)
             ]
-            
-            let vert1 = [
-                simd_mul( vert0[0], rotationMatrix),
-                simd_mul( vert0[1], rotationMatrix),
-                simd_mul( vert0[2], rotationMatrix)
-            ]
-            
-            let vert3 = [
-                simd_mul( vert1[0], translationBackMatrix),
-                simd_mul( vert1[1], translationBackMatrix),
-                simd_mul( vert1[2], translationBackMatrix)
-            ]
-            
-                                       
-            //simd_mul( SIMD3<Float>(ax,  ay, 1), translationOriginMatrix),
-            
+            allVert.append(SIMD2<Float>(temp[0].x, temp[0].y))
+            allVert.append(SIMD2<Float>(temp[1].x, temp[1].y))
+            allVert.append(SIMD2<Float>(temp[2].x, temp[2].y))
         }
-        
-        return [ SIMD2<Float>(0.0,  0.0),
-                 SIMD2<Float>(0.0,  0.0),
-                 SIMD2<Float>(0.0,  0.0)  ]
+        return allVert
     }
-    
 }
