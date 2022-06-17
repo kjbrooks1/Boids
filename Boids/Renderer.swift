@@ -32,7 +32,7 @@ class Renderer : NSObject, MTKViewDelegate {
               
         scene = Scene(instanceCount: 40)
         let color = SIMD4<Float>(0.86, 0.86, 0.86, 0.5)
-        circle = VisionCircle(mainGuy: scene.boids[0], circleSideCount: 30, radius: 0.35, color: color, device: device)
+        circle = VisionCircle(mainGuy: scene.boids[0], circleSideCount: 40, radius: 0.35, color: color, device: device)
         
         super.init()
         
@@ -45,14 +45,14 @@ class Renderer : NSObject, MTKViewDelegate {
     func buildPipeline() {
         // default library connects to Shaders.metal (access pre-compiled Shaders)
         let defaultLibrary = device.makeDefaultLibrary()
-        let vertexFunc = defaultLibrary?.makeFunction(name: "vertexShader")
+        let vertexFunc = defaultLibrary?.makeFunction(name: "vertex_main")
         let fragmentFunc = defaultLibrary?.makeFunction(name: "fragmentShader")
         
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.attributes[0].format = .float2
+        vertexDescriptor.attributes[0].format = .float2 // position
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .float4
+        vertexDescriptor.attributes[1].format = .float4 // color
         vertexDescriptor.attributes[1].offset = 0
         vertexDescriptor.attributes[1].bufferIndex = 1
         vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD2<Float>>.stride
@@ -60,10 +60,9 @@ class Renderer : NSObject, MTKViewDelegate {
         
         // set up render pipeline configuration
         let pipelineDescriptor = MTLRenderPipelineDescriptor()
+        pipelineDescriptor.vertexDescriptor = vertexDescriptor
         pipelineDescriptor.vertexFunction = vertexFunc
         pipelineDescriptor.fragmentFunction = fragmentFunc
-        pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
-        // Setup the output pixel format to match the pixel format of the metal kit view
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         
         // try to make pipeline
@@ -71,8 +70,6 @@ class Renderer : NSObject, MTKViewDelegate {
     }
     
     func makeResources() {
-        
-        
         
         vertexBuffer = device.makeBuffer(length: scene.boids.count * Scene.instanceDataSize, options: [])!
         scene.copyInstanceData(to: vertexBuffer)
@@ -91,8 +88,6 @@ class Renderer : NSObject, MTKViewDelegate {
         
         //scene.update(with: TimeInterval(1 / 60.0))
         //scene.copyInstanceData(to: vertexBuffer)
-        
-        
 
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
@@ -102,11 +97,12 @@ class Renderer : NSObject, MTKViewDelegate {
         
         // encode drawing commands -> draw triangle
         renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
+        //renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
         
         for (i, vertexBuffer) in circle.vertexBuffers.enumerated() {
-            renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i+1)
+            renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
         }
+        
         renderEncoder.drawIndexedPrimitives(type: circle.primitiveType, indexCount: circle.indexCount,
                                            indexType: circle.indexType,
                                             indexBuffer: circle.indexBuffer!,

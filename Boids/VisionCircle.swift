@@ -2,7 +2,6 @@
 //  VisionCircle.swift
 //  Boids
 //
-//  Created by Katherine Brooks on 6/17/22.
 //
 
 import Foundation
@@ -72,24 +71,22 @@ extension VisionCircle {
     convenience init(mainGuy: Boid, circleSideCount sideCount: Int, radius: Float, color: SIMD4<Float>, device: MTLDevice) {
         precondition(sideCount > 2)
         
-        var vertices = [SIMD2<Float>]()
+        var positions = [SIMD2<Float>]()
         var colors = [SIMD4<Float>]()
-        let center = SIMD2<Float>(0, 0)
+        //let center = SIMD2<Float>(0, 0)
         
         var angle: Float = .pi / 2
-        let deltaAngle = (2 * .pi - mainGuy.rho) / Float(sideCount)
+        let deltaAngle = (2 * .pi) / Float(sideCount)
         for _ in 0..<sideCount {
-            vertices.append(SIMD2<Float>(center.x + 0.3 * cos(angle + .pi/2 + mainGuy.rho/2), center.y + 0.3 * sin(angle + .pi/2 + mainGuy.rho/2)))
+            positions.append(SIMD2<Float>(0.3 * cos(angle), 0.3 * sin(angle)))
             colors.append(color)
-
             angle += deltaAngle
         }
-        vertices.append(SIMD2<Float>(0, 0))
+        positions.append(SIMD2<Float>(0, 0))
         colors.append(color)
         
-        let verticesBuffer = device.makeBuffer(bytes: vertices, length: MemoryLayout<SIMD2<Float>>.stride * vertices.count, options: .storageModeShared)!
-        verticesBuffer.label = "Vertex Positions"
-
+        let positionBuffer = device.makeBuffer(bytes: positions, length: MemoryLayout<SIMD2<Float>>.stride * positions.count, options: .storageModeShared)!
+        positionBuffer.label = "Vertex Positions"
         let colorBuffer = device.makeBuffer(bytes: colors, length: MemoryLayout<SIMD4<Float>>.stride * colors.count, options: .storageModeShared)!
         colorBuffer.label = "Vertex Colors"
         
@@ -104,9 +101,6 @@ extension VisionCircle {
         let indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.size * indices.count, options: .storageModeShared)!
         indexBuffer.label = "Polygon Indices"
 
-        self.init(vertexBuffers: [verticesBuffer, colorBuffer],
-                  vertexCount: vertices.count,
-                  indexBuffer: indexBuffer,
-                  indexCount: indices.count)
+        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexCount: positions.count, indexBuffer: indexBuffer, indexCount: indices.count)
     }
 }
