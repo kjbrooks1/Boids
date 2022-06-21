@@ -2,11 +2,9 @@
 //  Shaders.metal
 //  Boids
 //
-//  Created by Katherine Brooks on 6/8/22.
 //
 
 #include <metal_stdlib>
-#include "ShaderDefinitions.h"
 #include <simd/simd.h>
 
 using namespace metal;
@@ -21,26 +19,20 @@ struct VertexOut {
     float4 color;
 };
 
-struct FrameData {
-    float distanceX;
-    float distanceY;
-    float angleRad;
+struct PerInstanceUniforms {
+    simd_float4x4 transform;
 };
 
-vertex VertexOut vertexShader(device const VertexIn *in [[buffer(0)]], constant FrameData* frameData [[buffer(1)]], uint vertexID [[vertex_id]], uint instanceId [[instance_id]])
+vertex VertexOut vertex_main(VertexIn in [[stage_in]], constant PerInstanceUniforms *transformation [[buffer(1)]], uint instanceID [[instance_id]])
 {
-    float distX = frameData[instanceId].distanceX;
-    float distY = frameData[instanceId].distanceY;
-    float angle = frameData[instanceId].angleRad;
-    
-    VertexIn vin = in[vertexID];
+    constant PerInstanceUniforms &trans = transformation[instanceID];
     VertexOut out;
-    out.pos = float4((vin.position.x + distX * cos(angle)), (vin.position.y + distY * sin(angle)), 0, 1);
-    out.color = vin.color;
+    out.pos = float4(in.position, 0.0, 1.0) * trans.transform;
+    out.color = in.color;
     return out;
 }
 
-fragment float4 fragmentShader(VertexOut interpolated [[stage_in]])
-{
-    return interpolated.color;
+fragment float4 fragment_main(VertexOut in [[stage_in]]) {
+    return in.color;
 }
+ 
