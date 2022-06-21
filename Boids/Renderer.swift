@@ -1,6 +1,13 @@
 
-import Foundation
+import Cocoa
+import Metal
 import MetalKit
+import simd
+
+struct Node {
+    var mesh: MTKMesh
+    var modelMatrix: simd_float4x4 = matrix_identity_float4x4
+}
 
 class Renderer : NSObject, MTKViewDelegate {
     static let maxFramesInFlight = 3
@@ -21,8 +28,7 @@ class Renderer : NSObject, MTKViewDelegate {
     private let constantsStride: Int
     private var currentConstantBufferOffset: Int
 
-    var boid: Boid
-    var boid2: Boid
+    var mesh: BoidMesh
     
     init(view: MTKView) {
         guard let device = view.device else {
@@ -38,8 +44,7 @@ class Renderer : NSObject, MTKViewDelegate {
         self.currentConstantBufferOffset = 0
 
         let color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0)
-        boid = Boid(radius: 0.05, color: color, device: device)
-        boid2 = Boid(radius: 0.05, color: color, device: device)
+        mesh = BoidMesh(indexedPlanarPolygonSideCount: 3, radius: 0.3, color: color, device: device)
                 
         super.init()
 
@@ -88,7 +93,7 @@ class Renderer : NSObject, MTKViewDelegate {
     func draw(in view: MTKView) {
         frameSemaphore.wait()
         
-        boid.update(with: TimeInterval(1 / 60.0))
+        
         
         //scene.update(with: TimeInterval(1 / 60.0))
         //scene.copyInstanceData(to: instanceBuffers[frameIndex])
@@ -101,13 +106,12 @@ class Renderer : NSObject, MTKViewDelegate {
         renderCommandEncoder.setRenderPipelineState(renderPipelineState)
         
         //renderCommandEncoder.setVertexBuffer(constantBuffer, offset: currentConstantBufferOffset, index: 2)
+        for (i, vertexBuffer) in mesh.vertexBuffers.enumerated() {
+            renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
+        }
         
         // add other buffers
-        var offset = 0
-        for (i, vertexBuffer) in boid.vertexBuffers.enumerated() {
-            renderCommandEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: i)
-            offset += 1
-        }
+        
         
         // do transforms
         let movementMatrix = simd_float4x4(translate2D: SIMD2<Float>(0.1, 0.1))
@@ -116,7 +120,7 @@ class Renderer : NSObject, MTKViewDelegate {
         renderCommandEncoder.setVertexBytes(&matrix, length: MemoryLayout.size(ofValue: matrix), index: 2)
         
         // draw something
-        renderCommandEncoder.drawIndexedPrimitives(type: boid.primitiveType, indexCount: boid.indexCount, indexType: boid.indexType, indexBuffer: boid.indexBuffer!, indexBufferOffset: 0)
+        renderCommandEncoder.drawIndexedPrimitives(type: mesh.primitiveType, indexCount: mesh.indexCount, indexType: mesh.indexType, indexBuffer: mesh.indexBuffer!, indexBufferOffset: 0)
         
         
         renderCommandEncoder.endEncoding()

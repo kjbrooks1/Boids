@@ -2,7 +2,6 @@
 //  BoidMesh.swift
 //  Boids
 //
-//  Created by Katherine Brooks on 6/14/22.
 //
 
 import Foundation
@@ -18,20 +17,12 @@ class BoidState {
 }
 
 class BoidMesh {
-    
     let vertexBuffers: [MTLBuffer]
     let vertexCount: Int
     let primitiveType: MTLPrimitiveType = .triangle
     let indexBuffer: MTLBuffer?
     let indexType: MTLIndexType = .uint16
     let indexCount: Int
-    
-    init(vertexBuffers: [MTLBuffer], vertexCount: Int) {
-        self.vertexBuffers = vertexBuffers
-        self.vertexCount = vertexCount
-        self.indexBuffer = nil
-        self.indexCount = 0
-    }
 
     init(vertexBuffers: [MTLBuffer], vertexCount: Int,
          indexBuffer: MTLBuffer, indexCount: Int)
@@ -44,37 +35,6 @@ class BoidMesh {
 }
 
 extension BoidMesh {
-    
-    convenience init(planarPolygonSideCount sideCount: Int, radius: Float, color: SIMD4<Float>, device: MTLDevice) {
-        precondition(sideCount > 2)
-        var positions = [SIMD2<Float>]()
-        var colors = [SIMD4<Float>]()
-
-        // makes sideCountx3 vertex data points
-        var angle: Float = .pi / 2 // starting angle
-        let deltaAngle = (2 * .pi) / Float(sideCount) // cover 2pi
-        for _ in 0..<sideCount {
-            positions.append(SIMD2<Float>(radius * cos(angle), radius * sin(angle)))
-            colors.append(color)
-
-            positions.append(SIMD2<Float>(radius * cos(angle + deltaAngle), radius * sin(angle + deltaAngle)))
-            colors.append(color)
-
-            positions.append(SIMD2<Float>(0, 0))
-            colors.append(color)
-
-            angle += deltaAngle
-        }
-        
-        // fill position and color buffer
-        let positionBuffer = device.makeBuffer(bytes: positions, length: MemoryLayout<SIMD2<Float>>.stride * positions.count, options: .storageModeShared)!
-        positionBuffer.label = "Vertex Positions"
-
-        let colorBuffer = device.makeBuffer(bytes: colors, length: MemoryLayout<SIMD4<Float>>.stride * colors.count, options: .storageModeShared)!
-        colorBuffer.label = "Vertex Colors"
-
-        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexCount: positions.count)
-    }
 
     convenience init(indexedPlanarPolygonSideCount sideCount: Int, radius: Float, color: SIMD4<Float>, device: MTLDevice)
     {
@@ -84,7 +44,7 @@ extension BoidMesh {
         var colors = [SIMD4<Float>]()
 
         // makes sideCountx1 vertex data points
-        var angle: Float = .pi / 2 // starting angle
+        var angle: Float = .pi // starting angle
         let deltaAngle = (2 * .pi) / Float(sideCount) // cover 2pi
         for _ in 0..<sideCount {
             positions.append(SIMD2<Float>(radius * cos(angle), radius * sin(angle)))
