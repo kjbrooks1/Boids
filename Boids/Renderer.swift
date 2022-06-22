@@ -31,18 +31,14 @@ class Renderer : NSObject, MTKViewDelegate {
     
     var allVerticesCount: Int = 0
     var allVerticesSize: Int = 0
-    
-    var circle: VisionCircle
-    
+        
     init(mtkView: MTKView) {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
         windowSize = WindowSize(size: [Float(view.drawableSize.width), Float(view.drawableSize.height)])
-        
-        self.view = view
-        self.device = device
-        commandQueue = device.makeCommandQueue()!
+             
+        super.init()
         
         buildPipeline()
         buildResources()
@@ -57,7 +53,7 @@ class Renderer : NSObject, MTKViewDelegate {
     func buildPipeline() {
         // default library connects to Shaders.metal (access pre-compiled Shaders)
         let defaultLibrary = device.makeDefaultLibrary()
-        let vertexFunc = defaultLibrary?.makeFunction(name: "vertex_main")
+        let vertexFunc = defaultLibrary?.makeFunction(name: "vertexShader")
         let fragmentFunc = defaultLibrary?.makeFunction(name: "fragmentShader")
         
         let vertexDescriptor = MTLVertexDescriptor()
@@ -78,7 +74,7 @@ class Renderer : NSObject, MTKViewDelegate {
         pipelineDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         
         // try to make pipeline
-        pipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
+        renderPipelineState = try! device.makeRenderPipelineState(descriptor: pipelineDescriptor)
     }
     
     func buildResources() {
@@ -190,13 +186,12 @@ class Renderer : NSObject, MTKViewDelegate {
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         //renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
-        
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         // encode drawing commands -> draw triangle
         //swarm.update(with: TimeInterval(1 / 60.0))
         //makeResources()
-        renderEncoder.setRenderPipelineState(pipelineState)                 // what render pipeline to use
+        renderEncoder.setRenderPipelineState(renderPipelineState)                 // what render pipeline to use
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)    // what vertex buff to use
         renderEncoder.setVertexBuffer(frameBuffers[frameIndex], offset: 0, index: 1) // what frame buff to use
         
