@@ -7,36 +7,25 @@
 
 #include <metal_stdlib>
 #include "ShaderDefinitions.h"
-#include <simd/simd.h>
 
 using namespace metal;
 
-struct VertexIn {
-    float2 position [[attribute(0)]];
-    float4 color    [[attribute(1)]];
-};
-
 struct VertexOut {
-    float4 pos [[position]];
     float4 color;
+    float4 pos [[position]];
 };
 
-struct FrameData {
-    float distanceX;
-    float distanceY;
-    float angleRad;
-};
-
-vertex VertexOut vertexShader(device const VertexIn *in [[buffer(0)]], constant FrameData* frameData [[buffer(1)]], uint vertexID [[vertex_id]], uint instanceId [[instance_id]])
+vertex VertexOut vertexShader(const device Vertex *vertexArray [[buffer(0)]], unsigned int vid [[vertex_id]])
 {
-    float distX = frameData[instanceId].distanceX;
-    float distY = frameData[instanceId].distanceY;
-    float angle = frameData[instanceId].angleRad;
-    
-    VertexIn vin = in[vertexID];
+    // Get the data for the current vertex.
+    Vertex in = vertexArray[vid];
     VertexOut out;
-    out.pos = float4((vin.position.x + distX * cos(angle)), (vin.position.y + distY * sin(angle)), 0, 1);
-    out.color = vin.color;
+
+    // Pass the vertex color directly to the rasterizer
+    out.color = in.color;
+    // Pass the already normalized screen-space coordinates to the rasterizer
+    out.pos = float4(in.pos.x, in.pos.y, 0, 1);
+
     return out;
 }
 
