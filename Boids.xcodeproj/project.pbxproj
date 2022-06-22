@@ -36,8 +36,6 @@
 		4962801B2850DBB7003840E2 /* Renderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Renderer.swift; sourceTree = "<group>"; };
 		4962801D2850E639003840E2 /* Boid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Boid.swift; sourceTree = "<group>"; };
 		4962801F2850E649003840E2 /* Scene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Scene.swift; sourceTree = "<group>"; };
-		4962802128512A1C003840E2 /* ShaderDefinitions.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ShaderDefinitions.h; sourceTree = "<group>"; };
-		4962802228512ED9003840E2 /* Boids-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Boids-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -75,10 +73,8 @@
 		496280002850DA85003840E2 /* Boids */ = {
 			isa = PBXGroup;
 			children = (
-				4962802228512ED9003840E2 /* Boids-Bridging-Header.h */,
 				496280102850DAA4003840E2 /* Shaders.metal */,
 				4962801B2850DBB7003840E2 /* Renderer.swift */,
-				4962802128512A1C003840E2 /* ShaderDefinitions.h */,
 				4962801D2850E639003840E2 /* Boid.swift */,
 				4962801F2850E649003840E2 /* Scene.swift */,
 				496280052850DA87003840E2 /* Assets.xcassets */,
@@ -319,12 +315,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/metal-cpp-extensions",
-					"$(PROJECT_DIR)/metal-cpp",
-					"$(PROJECT_DIR)/Boids",
-					/Users/kjbrooks/Documents/Boids/Boids/ShaderDefinitions.h,
-				);
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Boids";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -336,7 +327,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.brooks.Boids;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "/Users/kjbrooks/Documents/Boids/Boids/Boids-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
@@ -353,12 +344,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/metal-cpp-extensions",
-					"$(PROJECT_DIR)/metal-cpp",
-					"$(PROJECT_DIR)/Boids",
-					/Users/kjbrooks/Documents/Boids/Boids/ShaderDefinitions.h,
-				);
+				HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/Boids";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMainStoryboardFile = Main;
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
@@ -370,7 +356,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.brooks.Boids;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OBJC_BRIDGING_HEADER = "/Users/kjbrooks/Documents/Boids/Boids/Boids-Bridging-Header.h";
+				SWIFT_OBJC_BRIDGING_HEADER = "";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

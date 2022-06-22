@@ -2,7 +2,6 @@
 //  Swarm.swift
 //  Boids
 //
-//  Created by Katherine Brooks on 6/8/22.
 //
 
 import Foundation
@@ -10,79 +9,67 @@ import MetalKit
 
 class Scene {
     
-    var boids: [Boid]
-    var circle: VisionCircle
-    static let instanceDataSize = 3 * MemoryLayout<Vertex>.stride
+    fileprivate var vertexBuffer: MTLBuffer!
+    fileprivate var colorBuffer: MTLBuffer!
+    fileprivate var instanceBuffers: [MTLBuffer] = []
     
-    init(instanceCount: Int){
-        boids = []
-        for _ in 0..<instanceCount {
-            boids.append(Boid())
+    var BOIDS: [Boid]
+    var boidCount: Int = 0
+    var time: Float = 0
+    
+    init(boidCount: Int, device: MTLDevice){
+        // init each boid
+        self.boidCount = boidCount
+        BOIDS = []
+        for _ in 0..<boidCount {
+            BOIDS.append( Boid() )
         }
-        circle = VisionCircle(mainGuy: boids[0])
+        
+        // one buffer with vertex info to make single triangle at 0,0
+        var shapeVerts: [Float] = []
+        shapeVerts.append(contentsOf: Boid.shapeVertices())
+        vertexBuffer = device.makeBuffer(bytes: shapeVerts, length: MemoryLayout<Float>.stride * shapeVerts.count, options: [])
+        
+        // another buffer with color info
+        var shapeColor: [Float] = []
+        shapeColor.append(contentsOf: Boid.shapeColors())
+        colorBuffer = device.makeBuffer(bytes: shapeColor, length: MemoryLayout<Float>.stride * shapeColor.count, options: [])
+        
+        // final buffer with per instance data = postion, angle
+        for _ in 0..<Renderer.maxFramesInFlight {
+            if let buffer = device.makeBuffer(length: MemoryLayout<Float>.stride * 4, options: []) {
+                instanceBuffers.append(buffer)
+            }
+        }
     }
     
-    func copyInstanceData(to buffer: MTLBuffer) {
-        // get the vertex data from each boid
-        var j = 0
-        var test: [Vertex] = []
-        
-        for i in 0..<circle.vertices.count {
-            test.append(Vertex(color: circle.color, pos: circle.vertices[i] ))
-        }
-        
-        for b in boids {
-            if (j == 0) { b.color = SIMD4<Float>(1.0, 0.0, 0.0, 1.0) }
-            test.append(Vertex(color: b.color, pos: b.vertices[0]))
-            test.append(Vertex(color: b.color, pos: b.vertices[1]))
-            test.append(Vertex(color: b.color, pos: b.vertices[2]))
-            j += 1
-        }
-        
-        // copy over to vertex buffer
-        let instanceData = buffer.contents().bindMemory(to: Float.self, capacity: boids.count * Scene.instanceDataSize + VisionCircle.circleDataSize)
-        memcpy(instanceData, test, boids.count * Scene.instanceDataSize + VisionCircle.circleDataSize)
+    func sawToothFunc(time: Float) -> Float {
+        let floor = floor((time / .pi) + 0.5)
+        return 2 * ( (time / .pi) - floor )
     }
     
-    func update(with timestep: TimeInterval) {
+    func updateInstanceData(frameIndex: Int) {
+        time += Float( TimeInterval(1 / 60.0) )
+        // another buffer with per instance data = postion, angle
+        let instanceData = instanceBuffers[frameIndex].contents().bindMemory(to: Float.self, capacity: 4*boidCount)
         
         var i = 0
-        for b in boids {
-            b.center.x = b.center.x + (Float(timestep) * b.velocity.x)
-            b.center.y = b.center.y + (Float(timestep) * b.velocity.y)
-            let translationOriginMatrix = simd_float3x3( SIMD3<Float>( 1, 0, -b.center.x),
-                                                         SIMD3<Float>( 0, 1, -b.center.y),
-                                                         SIMD3<Float>( 0, 0,       1)  )
-            
-            let rotationMatrix = simd_float3x3( SIMD3<Float>(cos(b.angle + 90 * (.pi / 180)), -sin(b.angle + 90 * (.pi / 180)), 0),
-                                                SIMD3<Float>(sin(b.angle + 90 * (.pi / 180)),  cos(b.angle + 90 * (.pi / 180)), 0),
-                                                SIMD3<Float>(         0,           0, 1)  )
-            
-            let translationBackMatrix = simd_float3x3( SIMD3<Float>( 1, 0, b.center.x),
-                                                       SIMD3<Float>( 0, 1, b.center.y),
-                                                       SIMD3<Float>( 0, 0,       1)  )
-            let transformationMatrix = translationOriginMatrix * rotationMatrix * translationBackMatrix
-            
-            if (i == 0) {
-                b.color = SIMD4<Float>(1.0, 0.0, 0.0, 1.0)
-                circle.vertices = circle.makeVertices(mainGuy: b, transMatrix: transformationMatrix)
-            }
-            if b.center.x <= -1.1 {
-                b.center.x = 1.09
-            }
-            else if b.center.y <= -1.1 {
-                b.center.y = 1.09
-            }
-            else if b.center.x >= 1.1 {
-                b.center.x = -1.09
-            }
-            else if b.center.y >= 1.1 {
-                b.center.y = -1.09
-            }
-            
-            b.vertices = b.makeVertices(centerX: b.center.x, centerY: b.center.y, angleRad: b.angle ,transMatrix: transformationMatrix)
-            i += 1
+        for b in 0..<boidCount {
+            instanceData[i] = BOIDS[b].angle; i+=1
+            instanceData[i] = BOIDS[b].position.x; i+=1
+            instanceData[i] = BOIDS[b].position.y; i+=1
+            instanceData[i] = sawToothFunc(time: time); i+=1
         }
+        //instanceBuffers[frameIndex].contents().copyMemory(from: instanceData, byteCount: MemoryLayout<Float>.stride * instanceData.count)
+    }
+    
+    func draw(_ encoder: MTLRenderCommandEncoder, frameIndex: Int) {
+        updateInstanceData(frameIndex: frameIndex)
+        encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        encoder.setVertexBuffer(colorBuffer, offset: 0, index: 1)
+        encoder.setVertexBuffer(instanceBuffers[frameIndex], offset: 0, index: 2)
+        
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3, instanceCount: boidCount)
     }
     
 }
