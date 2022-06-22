@@ -13,16 +13,17 @@ class Scene {
     fileprivate var vertexBuffer: MTLBuffer!
     fileprivate var instanceBuffers: [MTLBuffer] = []
     
-    
-    fileprivate var uniformBuffer: MTLBuffer!
-    var perInstanceUniforms : [PerInstanceUniforms] = []
-    
     var BOIDS: [Boid]
     var boidCount: Int = 0
     var time: Float = 0
     
     init(boidCount: Int, device: MTLDevice){
+        // init each boid
         self.boidCount = boidCount
+        BOIDS = []
+        for _ in 0..<boidCount {
+            BOIDS.append( Boid() )
+        }
         
         // one buffer with vertex info to make single triangle at 0,0
         var shapeVerts: [Float] = []
@@ -35,21 +36,6 @@ class Scene {
                 instanceBuffers.append(buffer)
             }
         }
-        
-        // final buffer with transformation matrix
-        BOIDS = []
-        for _ in 0..<boidCount {
-            let b = Boid()
-            BOIDS.append(b)
-            
-            let ID = simd_float4x4(SIMD4<Float>(1, 0, 0, 0),
-                                   SIMD4<Float>(0, 1, 0, 0),
-                                   SIMD4<Float>(0, 0, 1, 0),
-                                   SIMD4<Float>(0, 0, 0, 1))
-            let uniform: PerInstanceUniforms = PerInstanceUniforms(transform: ID);
-            perInstanceUniforms.append(uniform)
-        }
-        uniformBuffer = device.makeBuffer(bytes: perInstanceUniforms, length: MemoryLayout<PerInstanceUniforms>.stride * boidCount, options: [.storageModeShared])
     }
     
     func sawToothFunc(time: Float) -> Float {
@@ -71,28 +57,10 @@ class Scene {
         instanceBuffers[frameIndex].contents().copyMemory(from: instanceData, byteCount: MemoryLayout<Float>.stride * instanceData.count)
     }
     
-    func updateUniforms() {
-        time += 0.01
-        perInstanceUniforms = []
-        for b in BOIDS {
-            
-            let MOVE = simd_float4x4(SIMD4<Float>(1, 0, 0, sawToothFunc(time: time)*cos(b.angle)),
-                                     SIMD4<Float>(0, 1, 0, sawToothFunc(time: time)*sin(b.angle)),
-                                     SIMD4<Float>(0, 0, 1, 0),
-                                     SIMD4<Float>(0, 0, 0, 1))
-            
-            let uniform: PerInstanceUniforms = PerInstanceUniforms(transform: MOVE);
-            perInstanceUniforms.append(uniform)
-        }
-        uniformBuffer.contents().copyMemory(from: perInstanceUniforms, byteCount: MemoryLayout<PerInstanceUniforms>.stride * boidCount)
-    }
-    
     func draw(_ encoder: MTLRenderCommandEncoder, frameIndex: Int) {
         updateInstanceData(frameIndex: frameIndex)
-        //updateUniforms()
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         encoder.setVertexBuffer(instanceBuffers[frameIndex], offset: 0, index: 1)
-        //encoder.setVertexBuffer(uniformBuffer, offset: 0, index: 2)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3*boidCount, instanceCount: boidCount)
     }
     

@@ -12,20 +12,16 @@ class Renderer : NSObject, MTKViewDelegate {
     let frameSemaphore = DispatchSemaphore(value: Renderer.maxFramesInFlight)
     var frameIndex = 0
     
-    let view: MTKView!                  // view connected to storyboard
-    let device: MTLDevice!              // direct connection to GPU
-    let commandQueue: MTLCommandQueue!  // ordered list of commands that you tell the GPU to execute
-    
-    var pipelineState: MTLRenderPipelineState!
-    var vertexBuffer: MTLBuffer!
-    
+    let view: MTKView!                          // view connected to storyboard
+    let device: MTLDevice!                      // direct connection to GPU
+    let commandQueue: MTLCommandQueue!          // ordered list of commands that you tell the GPU to execute
+    var pipelineState: MTLRenderPipelineState!  // renderer pipeline
     let scene: Scene
     
     init(mtkView: MTKView) {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
-        
         scene = Scene(boidCount: 4, device: device)
         
         super.init()
@@ -39,8 +35,8 @@ class Renderer : NSObject, MTKViewDelegate {
         // default library connects to Shaders.metal (access pre-compiled Shaders)
         let defaultLibrary = device.makeDefaultLibrary()
         
-        let vertexDescriptor = MTLVertexDescriptor()
         // vertex info
+        let vertexDescriptor = MTLVertexDescriptor()
         vertexDescriptor.attributes[0].format = .float2 // (x,y)
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0

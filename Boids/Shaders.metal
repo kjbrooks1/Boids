@@ -27,23 +27,6 @@ struct PerInstanceUniforms {
     simd_float4x4 transform;
 };
 
-/*
-let T1 = simd_float4x4(SIMD4<Float>(1, 0, 0, -position.x),
-                       SIMD4<Float>(0, 1, 0, -position.y),
-                       SIMD4<Float>(0, 0, 1, 0),
-                       SIMD4<Float>(0, 0, 0, 1))
-
-let R = simd_float4x4(SIMD4<Float>(cos(angle), -sin(angle), 0, 0),
-                       SIMD4<Float>(sin(angle),  cos(angle), 0, 0),
-                       SIMD4<Float>(0, 0, 1, 0),
-                       SIMD4<Float>(0, 0, 0, 1))
-
-let T2 = simd_float4x4(SIMD4<Float>(1, 0, 0, position.x),
-                       SIMD4<Float>(0, 1, 0, position.y),
-                       SIMD4<Float>(0, 0, 1, 0),
-                       SIMD4<Float>(0, 0, 0, 1))
-*/
-
 vertex VertexOut vertex_main(VertexIn in [[stage_in]])
 {
     
