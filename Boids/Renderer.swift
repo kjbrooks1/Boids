@@ -22,7 +22,7 @@ class Renderer : NSObject, MTKViewDelegate {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
-        scene = Scene(boidCount: 30, device: device)
+        scene = Scene(boidCount: 80, device: device)
         
         super.init()
         
@@ -112,7 +112,8 @@ class Renderer : NSObject, MTKViewDelegate {
         // "submit" everything done
         renderEncoder.endEncoding()
         
-        commandBuffer.present(view.currentDrawable!)
+        self.view.currentDrawable?.present()
+        //commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
         
         commandBuffer.addCompletedHandler { _ in
