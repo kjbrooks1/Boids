@@ -9,47 +9,98 @@ import MetalKit
 
 class VisionCircle {
     
+    // memory size info
     static let sideCount = 40
-    
     static let verticiesSize = 3 * MemoryLayout<Vertex>.stride
     static let colorSize = MemoryLayout<SIMD3<Float>>.stride
     static let circleDataSize = sideCount * 3 * MemoryLayout<Vertex>.stride
+
+    // mesh info
+    let vertexBuffers: [MTLBuffer]
+    let vertexCount: Int
+    let primitiveType: MTLPrimitiveType = .triangle
+    let indexBuffer: MTLBuffer?
+    let indexType: MTLIndexType = .uint16
+    let indexCount: Int
     
-    var position: SIMD2<Float>
-    var vertices: [SIMD2<Float>]!    // [x,y] * sideCount
-    var velocity: SIMD2<Float>
-    var color: SIMD4<Float>
-    var radius: Float
-    var mainGuy: Boid
+    init(vertexBuffers: [MTLBuffer], vertexCount: Int, indexBuffer: MTLBuffer, indexCount: Int)
+    {
+        self.vertexBuffers = vertexBuffers
+        self.vertexCount = vertexCount
+        self.indexBuffer = indexBuffer
+        self.indexCount = indexCount
+    }
     
+    /*
     init(mainGuy: Boid) {
         self.mainGuy = mainGuy
-        position = mainGuy.center
-        velocity = mainGuy.velocity
-        color = SIMD4<Float>(0.86, 0.86, 0.86, 0.5)
-        radius = 2
+        center = mainGuy.vertices[2]
+        
+        indices = [UInt16]()
+        let count = UInt16(VisionCircle.sideCount)
+        for i in 0..<count {
+            indices.append(i)
+            indices.append(count)
+            indices.append((i + 1) % count)
+        }
+        indexCount = indices.count
         vertices = makeVertices(mainGuy: mainGuy, transMatrix: mainGuy.transformationMatrix)
     }
+     
     
     func makeVertices(mainGuy: Boid, transMatrix: simd_float3x3) -> [SIMD2<Float>] {
         var allVert: [SIMD2<Float>] = []
-        position = mainGuy.center
-        velocity = mainGuy.velocity
-        let angle = mainGuy.angleC
-        let deltaTheta = (2 * Float.pi - angle) / Float(VisionCircle.sideCount)
-        for t in 0..<VisionCircle.sideCount {
-            let t0 = Float(t) * deltaTheta
-            let t1 = Float(t + 1) * deltaTheta
-                 
-            let temp = [
-                simd_mul( SIMD3<Float>(position.x, position.y, 1), transMatrix),
-                simd_mul( SIMD3<Float>(position.x+cos(t0 + .pi / 2 + angle / 2)*0.35, position.y+sin(t0 + .pi / 2 + angle / 2)*0.35, 1), transMatrix),
-                simd_mul( SIMD3<Float>(position.x+cos(t1 + .pi / 2 + angle / 2)*0.35, position.y+sin(t1 + .pi / 2 + angle / 2)*0.35, 1), transMatrix)
-            ]
-            allVert.append(SIMD2<Float>(temp[0].x, temp[0].y))
-            allVert.append(SIMD2<Float>(temp[1].x, temp[1].y))
-            allVert.append(SIMD2<Float>(temp[2].x, temp[2].y))
+        center = mainGuy.vertices[2]
+        
+        let blindAngle = mainGuy.rho
+        let deltaTheta = (2 * Float.pi - blindAngle) / Float(VisionCircle.sideCount)
+        var angle: Float = 0.0
+        for _ in 0..<VisionCircle.sideCount {
+            let temp = simd_mul( SIMD3<Float>(center.x+cos(angle + .pi / 2 + blindAngle / 2)*0.35, center.y+sin(angle + .pi / 2 + blindAngle / 2)*0.35, 1), transMatrix)
+            allVert.append(SIMD2<Float>(temp.x, temp.y))
+            angle += deltaTheta
         }
+        allVert.append(SIMD2<Float>(center.x, center.y))
         return allVert
+    }
+     */
+}
+
+extension VisionCircle {
+    
+    convenience init(mainGuy: Boid, circleSideCount sideCount: Int, radius: Float, color: SIMD4<Float>, device: MTLDevice) {
+        precondition(sideCount > 2)
+        
+        var positions = [SIMD2<Float>]()
+        var colors = [SIMD4<Float>]()
+        //let center = SIMD2<Float>(0, 0)
+        
+        var angle: Float = .pi / 2
+        let deltaAngle = (2 * .pi) / Float(sideCount)
+        for _ in 0..<sideCount {
+            positions.append(SIMD2<Float>(0.3 * cos(angle), 0.3 * sin(angle)))
+            colors.append(color)
+            angle += deltaAngle
+        }
+        positions.append(SIMD2<Float>(0, 0))
+        colors.append(color)
+        
+        let positionBuffer = device.makeBuffer(bytes: positions, length: MemoryLayout<SIMD2<Float>>.stride * positions.count, options: .storageModeShared)!
+        positionBuffer.label = "Vertex Positions"
+        let colorBuffer = device.makeBuffer(bytes: colors, length: MemoryLayout<SIMD4<Float>>.stride * colors.count, options: .storageModeShared)!
+        colorBuffer.label = "Vertex Colors"
+        
+        let count = UInt16(sideCount)
+        var indices = [UInt16]()
+        for i in 0..<count {
+            indices.append(i)
+            indices.append(count)
+            indices.append((i + 1) % count)
+        }
+
+        let indexBuffer = device.makeBuffer(bytes: indices, length: MemoryLayout<UInt16>.size * indices.count, options: .storageModeShared)!
+        indexBuffer.label = "Polygon Indices"
+
+        self.init(vertexBuffers: [positionBuffer, colorBuffer], vertexCount: positions.count, indexBuffer: indexBuffer, indexCount: indices.count)
     }
 }
