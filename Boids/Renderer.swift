@@ -1,12 +1,8 @@
-//
-//  Renderer.swift
-//  Boids
-//
-//  Created by Katherine Brooks on 6/8/22.
-//
 
+import Cocoa
 import Metal
 import MetalKit
+import simd
 
 struct FrameData {
     var distanceX: Float
@@ -27,7 +23,7 @@ class Renderer : NSObject, MTKViewDelegate {
     let commandQueue: MTLCommandQueue!  // ordered list of commands that you tell the GPU to execute
     let windowSize: WindowSize!
     
-    var pipelineState: MTLRenderPipelineState!
+    var renderPipelineState: MTLRenderPipelineState!
     var vertexBuffer: MTLBuffer!
     
     var BOIDS: [Boid] = []
@@ -44,7 +40,9 @@ class Renderer : NSObject, MTKViewDelegate {
         commandQueue = device.makeCommandQueue()
         windowSize = WindowSize(size: [Float(view.drawableSize.width), Float(view.drawableSize.height)])
         
-        super.init()
+        self.view = view
+        self.device = device
+        commandQueue = device.makeCommandQueue()!
         
         buildPipeline()
         buildResources()
@@ -152,7 +150,6 @@ class Renderer : NSObject, MTKViewDelegate {
         return 2 * ( (newTime / .pi) - floorPart )
     }
     
-    // automatically called to render new content
     func draw(in view: MTKView) {
         frameSemaphore.wait()
         
@@ -193,8 +190,8 @@ class Renderer : NSObject, MTKViewDelegate {
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
-        guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
+        guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
+        //renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
         
         // encode drawing commands -> draw triangle
         //swarm.update(with: TimeInterval(1 / 60.0))
@@ -215,5 +212,4 @@ class Renderer : NSObject, MTKViewDelegate {
         commandBuffer.commit()
         frameIndex = (frameIndex + 1) % Renderer.maxFramesInFlight
     }
-    
 }

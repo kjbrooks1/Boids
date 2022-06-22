@@ -2,11 +2,23 @@
 //  Boid.swift
 //  Boids
 //
-//  Created by Katherine Brooks on 6/8/22.
+//  Created by Katherine Brooks on 6/14/22.
 //
 
 import Foundation
-import MetalKit
+import Metal
+import simd
+
+struct stateInfo {
+    // shape drawing info
+    var verticesCoord: [SIMD2<Float>]
+    var verticesColor: [SIMD4<Float>]
+    
+    // update-able info
+    var center: SIMD2<Float>  // center position
+    var velocity: SIMD2<Float>  // vector (x,y,z)
+    var rotationAngle: Float    // radians velocity vector from x axis
+}
 
 class Boid {
     

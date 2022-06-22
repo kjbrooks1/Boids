@@ -180,6 +180,7 @@
 				496280112850DAA4003840E2 /* Shaders.metal in Sources */,
 				49595E5E2863637B00C4143C /* VisionCircle.swift in Sources */,
 				496280042850DA85003840E2 /* ViewController.swift in Sources */,
+				49595E372858BFB300C4143C /* BoidMesh.swift in Sources */,
 				496280022850DA85003840E2 /* AppDelegate.swift in Sources */,
 				4962801E2850E63A003840E2 /* Boid.swift in Sources */,
 			);
