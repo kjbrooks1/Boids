@@ -8,6 +8,7 @@
 import Foundation
 import MetalKit
 
+/*
 class Scene {
     
     var boids: [Boid]
@@ -78,3 +79,4 @@ class Scene {
     }
     
 }
+ */
