@@ -7,23 +7,14 @@
 import Foundation
 import MetalKit
 
-struct PerInstanceUniforms {
-    var transform: simd_float4x4
-}
-
 class Boid {
     
     var position: SIMD2<Float>
     var angle: Float
-    var speed: Float
     
     init() {
         position = SIMD2<Float>(Float.random(in: -0.9 ... 0.9), Float.random(in: -0.9 ... 0.9))
-        print(position)
         angle = Float.random(in: 0 ..< (2 * .pi))
-        print(angle)
-        speed = Float.random(in: 0...0.5)
-        print("----")
     }
     
     static func makeBoidVertices(x: Float, y:Float) -> [Float] {
