@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		49595E5E2863637B00C4143C /* VisionCircle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49595E5D2863637B00C4143C /* VisionCircle.swift */; };
 		496280022850DA85003840E2 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 496280012850DA85003840E2 /* AppDelegate.swift */; };
 		496280042850DA85003840E2 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 496280032850DA85003840E2 /* ViewController.swift */; };
 		496280062850DA87003840E2 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 496280052850DA87003840E2 /* Assets.xcassets */; };
@@ -22,6 +23,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		49595E5D2863637B00C4143C /* VisionCircle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionCircle.swift; sourceTree = "<group>"; };
 		49627FFE2850DA85003840E2 /* Boids.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Boids.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		496280012850DA85003840E2 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		496280032850DA85003840E2 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -80,6 +82,7 @@
 				4962801B2850DBB7003840E2 /* Renderer.swift */,
 				4962802128512A1C003840E2 /* ShaderDefinitions.h */,
 				4962801D2850E639003840E2 /* Boid.swift */,
+				49595E5D2863637B00C4143C /* VisionCircle.swift */,
 				4962801F2850E649003840E2 /* Scene.swift */,
 				496280052850DA87003840E2 /* Assets.xcassets */,
 				496280072850DA87003840E2 /* Main.storyboard */,
@@ -175,6 +178,7 @@
 				496280202850E649003840E2 /* Scene.swift in Sources */,
 				4962801C2850DBB7003840E2 /* Renderer.swift in Sources */,
 				496280112850DAA4003840E2 /* Shaders.metal in Sources */,
+				49595E5E2863637B00C4143C /* VisionCircle.swift in Sources */,
 				496280042850DA85003840E2 /* ViewController.swift in Sources */,
 				496280022850DA85003840E2 /* AppDelegate.swift in Sources */,
 				4962801E2850E63A003840E2 /* Boid.swift in Sources */,
