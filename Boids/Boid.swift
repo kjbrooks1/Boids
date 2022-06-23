@@ -18,7 +18,7 @@ class Boid {
     }
     
     static func shapeVertices() -> [Float] {
-        let width: Float = 0.07
+        let width: Float = 0.05
         let height: Float = 1.5 * width
         
         let a = SIMD4<Float>(0 - (height/2), 0 + (width/2), 0, 1)

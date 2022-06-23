@@ -49,18 +49,34 @@ class Scene {
     }
     
     func updateInstanceData(frameIndex: Int) {
-        time += Float( TimeInterval(1 / 60.0) )
+        time = Float( TimeInterval(1 / 60.0) )
+        
+        
+        
         // another buffer with per instance data = postion, angle
         let instanceData = instanceBuffers[frameIndex].contents().bindMemory(to: Float.self, capacity: 4*boidCount)
         
         var i = 0
         for b in 0..<boidCount {
+            BOIDS[b].position.x = BOIDS[b].position.x + time*cos(BOIDS[b].angle)
+            BOIDS[b].position.y = BOIDS[b].position.y + time*sin(BOIDS[b].angle)
+            if BOIDS[b].position.x >= 1.0 {
+                BOIDS[b].position.x = -0.99
+            }
+            if BOIDS[b].position.y >= 1.0 {
+                BOIDS[b].position.y = -0.99
+            }
+            if BOIDS[b].position.x <= -1.0 {
+                BOIDS[b].position.x = 0.99
+            }
+            if BOIDS[b].position.y <= -1.0 {
+                BOIDS[b].position.y = 0.99
+            }
+            
             instanceData[i] = BOIDS[b].angle; i+=1
             instanceData[i] = BOIDS[b].position.x; i+=1
             instanceData[i] = BOIDS[b].position.y; i+=1
-            instanceData[i] = sawToothFunc(time: time); i+=1
         }
-        //instanceBuffers[frameIndex].contents().copyMemory(from: instanceData, byteCount: MemoryLayout<Float>.stride * instanceData.count)
     }
     
     func draw(_ encoder: MTLRenderCommandEncoder, frameIndex: Int) {
@@ -68,7 +84,6 @@ class Scene {
         encoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         encoder.setVertexBuffer(colorBuffer, offset: 0, index: 1)
         encoder.setVertexBuffer(instanceBuffers[frameIndex], offset: 0, index: 2)
-        
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3, instanceCount: boidCount)
     }
     

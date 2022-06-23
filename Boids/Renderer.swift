@@ -22,7 +22,7 @@ class Renderer : NSObject, MTKViewDelegate {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
-        scene = Scene(boidCount: 80, device: device)
+        scene = Scene(boidCount: 50, device: device)
         
         super.init()
         
@@ -72,12 +72,8 @@ class Renderer : NSObject, MTKViewDelegate {
         vertexDescriptor.attributes[8].format = .float // position.y
         vertexDescriptor.attributes[8].offset = MemoryLayout<Float>.stride * 2
         vertexDescriptor.attributes[8].bufferIndex = 2
-        
-        vertexDescriptor.attributes[9].format = .float // time element
-        vertexDescriptor.attributes[9].offset = MemoryLayout<Float>.stride * 3
-        vertexDescriptor.attributes[9].bufferIndex = 2
 
-        vertexDescriptor.layouts[2].stride = MemoryLayout<Float>.stride * 4
+        vertexDescriptor.layouts[2].stride = MemoryLayout<Float>.stride * 3
         vertexDescriptor.layouts[2].stepFunction = .perInstance
         vertexDescriptor.layouts[2].stepRate = 1
         

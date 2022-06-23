@@ -19,7 +19,6 @@ struct VertexIn {
     float angle  [[attribute(6)]];
     float posX   [[attribute(7)]];
     float posY   [[attribute(8)]];
-    float time   [[attribute(9)]];
 };
 
 struct VertexOut {
@@ -39,8 +38,8 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]])
                                     float4(0, 0, 1, 0),
                                     float4(0, 0, 0, 1));
     
-    simd_float4x4 T = simd_float4x4(float4(1, 0, 0, in.posX + in.time*cos(in.angle)),
-                                    float4(0, 1, 0, in.posY + in.time*sin(in.angle)),
+    simd_float4x4 T = simd_float4x4(float4(1, 0, 0, in.posX),
+                                    float4(0, 1, 0, in.posY),
                                     float4(0, 0, 1, 0),
                                     float4(0, 0, 0, 1));
     
