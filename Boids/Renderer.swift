@@ -38,25 +38,26 @@ class Renderer : NSObject, MTKViewDelegate {
         vertexDescriptor.attributes[0].format = .float2 // vertex=(x,y)
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .float4 // color=(rgba)
-        vertexDescriptor.attributes[1].offset = MemoryLayout<SIMD2<Float>>.stride
-        vertexDescriptor.attributes[1].bufferIndex = 0
-        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD2<Float>>.stride + MemoryLayout<SIMD4<Float>>.stride
+        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD2<Float>>.stride
         
         // per instance
+        vertexDescriptor.attributes[1].format = .float4 // color=(rgba)
+        vertexDescriptor.attributes[1].offset = 0
+        vertexDescriptor.attributes[1].bufferIndex = 2
+        
         vertexDescriptor.attributes[6].format = .float // angle
-        vertexDescriptor.attributes[6].offset = 0
+        vertexDescriptor.attributes[6].offset = MemoryLayout<SIMD4<Float>>.stride
         vertexDescriptor.attributes[6].bufferIndex = 2
         
         vertexDescriptor.attributes[7].format = .float // position.x
-        vertexDescriptor.attributes[7].offset = MemoryLayout<Float>.stride
+        vertexDescriptor.attributes[7].offset = MemoryLayout<SIMD4<Float>>.stride + MemoryLayout<Float>.stride
         vertexDescriptor.attributes[7].bufferIndex = 2
         
         vertexDescriptor.attributes[8].format = .float // position.y
-        vertexDescriptor.attributes[8].offset = MemoryLayout<Float>.stride * 2
+        vertexDescriptor.attributes[8].offset = MemoryLayout<SIMD4<Float>>.stride + MemoryLayout<Float>.stride * 2
         vertexDescriptor.attributes[8].bufferIndex = 2
 
-        vertexDescriptor.layouts[2].stride = MemoryLayout<Float>.stride * 3
+        vertexDescriptor.layouts[2].stride = MemoryLayout<SIMD4<Float>>.stride + MemoryLayout<Float>.stride * 3
         vertexDescriptor.layouts[2].stepFunction = .perInstance
         vertexDescriptor.layouts[2].stepRate = 1
         
