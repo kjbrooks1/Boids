@@ -10,12 +10,8 @@
 using namespace metal;
 
 struct VertexIn {
-    float x      [[attribute(0)]];
-    float y      [[attribute(1)]];
-    float r      [[attribute(2)]];
-    float g      [[attribute(3)]];
-    float b      [[attribute(4)]];
-    float a      [[attribute(5)]];
+    float2 vert    [[attribute(0)]];
+    float4 color   [[attribute(1)]];
     float angle  [[attribute(6)]];
     float posX   [[attribute(7)]];
     float posY   [[attribute(8)]];
@@ -44,8 +40,8 @@ vertex VertexOut vertex_main(VertexIn in [[stage_in]])
                                     float4(0, 0, 0, 1));
     
     VertexOut out;
-    out.pos = float4(in.x , in.y, 0.0, 1.0) * R * T;
-    out.color = float4(in.r, in.g, in.b, in.a);
+    out.pos = float4(in.vert.x , in.vert.y, 0.0, 1.0) * R * T;
+    out.color = in.color;
     return out;
 }
 

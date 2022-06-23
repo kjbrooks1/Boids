@@ -22,43 +22,26 @@ class Renderer : NSObject, MTKViewDelegate {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
-        scene = Scene(boidCount: 50, device: device)
+        scene = Scene(boidCount: 12, device: device)
         
         super.init()
         
         buildPipeline()
     }
     
-    
-    // create our custom rendering pipeline
     func buildPipeline() {
         // default library connects to Shaders.metal (access pre-compiled Shaders)
         let defaultLibrary = device.makeDefaultLibrary()
         
         // vertex info
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.attributes[0].format = .float // x
+        vertexDescriptor.attributes[0].format = .float2 // vertex=(x,y)
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .float // y
-        vertexDescriptor.attributes[1].offset = MemoryLayout<Float>.stride
+        vertexDescriptor.attributes[1].format = .float4 // color=(rgba)
+        vertexDescriptor.attributes[1].offset = MemoryLayout<SIMD2<Float>>.stride
         vertexDescriptor.attributes[1].bufferIndex = 0
-        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.stride * 2
-        
-        vertexDescriptor.attributes[2].format = .float // r
-        vertexDescriptor.attributes[2].offset = 0
-        vertexDescriptor.attributes[2].bufferIndex = 1
-        vertexDescriptor.attributes[3].format = .float // g
-        vertexDescriptor.attributes[3].offset = MemoryLayout<Float>.stride
-        vertexDescriptor.attributes[3].bufferIndex = 1
-        vertexDescriptor.attributes[4].format = .float // b
-        vertexDescriptor.attributes[4].offset = MemoryLayout<Float>.stride * 2
-        vertexDescriptor.attributes[4].bufferIndex = 1
-        vertexDescriptor.attributes[5].format = .float // a
-        vertexDescriptor.attributes[5].offset = MemoryLayout<Float>.stride * 3
-        vertexDescriptor.attributes[5].bufferIndex = 1
-        vertexDescriptor.layouts[1].stride = MemoryLayout<Float>.stride * 4
-        
+        vertexDescriptor.layouts[0].stride = MemoryLayout<SIMD2<Float>>.stride + MemoryLayout<SIMD4<Float>>.stride
         
         // per instance
         vertexDescriptor.attributes[6].format = .float // angle
@@ -98,7 +81,7 @@ class Renderer : NSObject, MTKViewDelegate {
         // clearing the screen
         guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
         guard let renderPassDescriptor = view.currentRenderPassDescriptor else { return }
-        //renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
+        renderPassDescriptor.colorAttachments[0].clearColor = MTLClearColorMake(1.0, 1.0, 1.0, 1) // set bg color
         guard let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor) else { return }
         renderEncoder.setRenderPipelineState(pipelineState)
         
@@ -107,11 +90,8 @@ class Renderer : NSObject, MTKViewDelegate {
         
         // "submit" everything done
         renderEncoder.endEncoding()
-        
         self.view.currentDrawable?.present()
-        //commandBuffer.present(view.currentDrawable!)
         commandBuffer.commit()
-        
         commandBuffer.addCompletedHandler { _ in
             self.frameSemaphore.signal()
         }
