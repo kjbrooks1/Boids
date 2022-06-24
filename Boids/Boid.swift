@@ -21,8 +21,8 @@ class Boid {
     }
     
     static func triangleVertices() -> [Float] {
-        let width: Float = 0.05
-        let height: Float = 1.5 * width
+        let width: Float = 0.04
+        let height: Float = 1.2 * width
         
         let a = SIMD4<Float>(0 - (height/2), 0 + (width/2), 0, 1)
         let b = SIMD4<Float>(0 - (height/2), 0 - (width/2), 0, 1)

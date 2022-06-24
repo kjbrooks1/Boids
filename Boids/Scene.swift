@@ -48,9 +48,10 @@ class Scene {
         for b in 0..<boidCount {
             if(b==0) { BOIDS[b].color = SIMD4<Float>(1,0,0,1) }
             
-            let seperationVector = seperation(boid: BOIDS[b]) * 0.3
+            let seperationVector = seperation(boid: BOIDS[b]) * 0.6
             let alignmentVector = alignment(boid: BOIDS[b]) * 0.3
-            BOIDS[b].velocity = simd_normalize(BOIDS[b].velocity + seperationVector + alignmentVector) * 0.5
+            let cohesionVector = cohesion(boid: BOIDS[b]) * 0.1
+            BOIDS[b].velocity = simd_normalize(BOIDS[b].velocity + seperationVector + alignmentVector + cohesionVector) * 0.5
             
             BOIDS[b].angle = atan2(BOIDS[b].velocity.y, BOIDS[b].velocity.x)
             
@@ -94,7 +95,7 @@ class Scene {
     }
     
     func seperation(boid: Boid) -> SIMD2<Float> {
-        let minDistance: Float = 0.1
+        let minDistance: Float = 0.15
         var nearbyVect = SIMD2<Float>(0,0)
         for other in BOIDS {
             if(other !== boid && distance(a: boid, b: other) <= minDistance){
@@ -105,7 +106,7 @@ class Scene {
     }
     
     func alignment(boid: Boid) -> SIMD2<Float> {
-        let minDistance: Float = 0.1
+        let minDistance: Float = 0.15
         var nearbyVect = SIMD2<Float>(0,0)
         var neighborCount: Float = 0
         for other in BOIDS {
@@ -118,6 +119,24 @@ class Scene {
             return nearbyVect
         }
         return simd_normalize(nearbyVect / neighborCount)
+    }
+    
+    func cohesion(boid: Boid) -> SIMD2<Float> {
+        let minDistance: Float = 0.15
+        var nearbyVect = SIMD2<Float>(0,0)
+        var neighborCount: Float = 0
+        for other in BOIDS {
+            if(other !== boid && distance(a: boid, b: other) <= minDistance){
+                nearbyVect += other.position
+                neighborCount += 1
+            }
+        }
+        
+        if(neighborCount == 0){
+            return nearbyVect
+        }
+        nearbyVect /= neighborCount
+        return simd_normalize(nearbyVect  - boid.position)
     }
     
 }

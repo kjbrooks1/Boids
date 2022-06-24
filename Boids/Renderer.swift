@@ -22,7 +22,7 @@ class Renderer : NSObject, MTKViewDelegate {
         view = mtkView
         device = mtkView.device
         commandQueue = device.makeCommandQueue()
-        scene = Scene(boidCount: 20, device: device)
+        scene = Scene(boidCount: 100, device: device)
         
         super.init()
         
