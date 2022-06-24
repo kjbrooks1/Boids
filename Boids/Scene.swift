@@ -16,6 +16,7 @@ class Scene {
     var boidCount: Int = 0
     var visionCircle: VisionCircle
     
+    
     init(boidCount: Int, device: MTLDevice){
         // init each boid
         self.boidCount = boidCount
@@ -48,7 +49,8 @@ class Scene {
             if(b==0) { BOIDS[b].color = SIMD4<Float>(1,0,0,1) }
             
             let seperationVector = seperation(boid: BOIDS[b]) * 0.3
-            BOIDS[b].velocity = simd_normalize(BOIDS[b].velocity + seperationVector) * 0.5
+            let alignmentVector = alignment(boid: BOIDS[b]) * 0.3
+            BOIDS[b].velocity = simd_normalize(BOIDS[b].velocity + seperationVector + alignmentVector) * 0.5
             
             BOIDS[b].angle = atan2(BOIDS[b].velocity.y, BOIDS[b].velocity.x)
             
@@ -92,7 +94,7 @@ class Scene {
     }
     
     func seperation(boid: Boid) -> SIMD2<Float> {
-        let minDistance: Float = 0.35
+        let minDistance: Float = 0.1
         var nearbyVect = SIMD2<Float>(0,0)
         for other in BOIDS {
             if(other !== boid && distance(a: boid, b: other) <= minDistance){
@@ -100,6 +102,22 @@ class Scene {
             }
         }
         return -1 * nearbyVect
+    }
+    
+    func alignment(boid: Boid) -> SIMD2<Float> {
+        let minDistance: Float = 0.1
+        var nearbyVect = SIMD2<Float>(0,0)
+        var neighborCount: Float = 0
+        for other in BOIDS {
+            if(other !== boid && distance(a: boid, b: other) <= minDistance){
+                nearbyVect += other.velocity
+                neighborCount += 1
+            }
+        }
+        if(neighborCount == 0){
+            return nearbyVect
+        }
+        return simd_normalize(nearbyVect / neighborCount)
     }
     
 }
