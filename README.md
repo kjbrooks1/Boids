@@ -1,5 +1,4 @@
 # Boids - Flocking Simulation
------------------------------
 
 Boids are an algoirthmic name for the objects used to simulate the flocking of birds. This idea was first created by Craig Reynolds in 1986. More can be read about it [here](https://en.wikipedia.org/wiki/Boids). Here I've recreated the Boids simulation using Swift and Apple's Metal Graphics API.
 
@@ -7,7 +6,7 @@ Boids are an algoirthmic name for the objects used to simulate the flocking of b
 ![The final result](https://github.com/kjbrooks1/Boids/blob/main/BOIDS-SIMULATION-FINAL.gif)
 
 
-### 3 Basic Rules of a Boid
+### The 3 Rules of being a Boid
 ---------------------------
 **1. Seperation**
 Steer away from nearby Boids to avoid collisions
