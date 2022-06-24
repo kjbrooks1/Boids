@@ -46,8 +46,15 @@ class Scene {
         var i = 0
         for b in 0..<boidCount {
             if(b==0) { BOIDS[b].color = SIMD4<Float>(1,0,0,1) }
-            BOIDS[b].position.x = BOIDS[b].position.x + time*cos(BOIDS[b].angle)
-            BOIDS[b].position.y = BOIDS[b].position.y + time*sin(BOIDS[b].angle)
+            
+            let seperationVector = seperation(boid: BOIDS[b]) * 0.3
+            BOIDS[b].velocity = simd_normalize(BOIDS[b].velocity + seperationVector) * 0.5
+            
+            BOIDS[b].angle = atan2(BOIDS[b].velocity.y, BOIDS[b].velocity.x)
+            
+            BOIDS[b].position.x = BOIDS[b].position.x + time * BOIDS[b].velocity.x
+            BOIDS[b].position.y = BOIDS[b].position.y + time * BOIDS[b].velocity.y
+            
             if BOIDS[b].position.x >= 1.0 {
                 BOIDS[b].position.x = -0.99
             }
@@ -60,8 +67,6 @@ class Scene {
             if BOIDS[b].position.y <= -1.0 {
                 BOIDS[b].position.y = 0.99
             }
-            
-            steerAway(boid: BOIDS[b])
             
             instanceData[i] = BOIDS[b].color.x; i+=1
             instanceData[i] = BOIDS[b].color.y; i+=1
@@ -86,15 +91,15 @@ class Scene {
         return sqrt( pow((a.position.x - b.position.x), 2) + pow((a.position.y - b.position.y), 2) )
     }
     
-    func steerAway(boid: Boid) {
+    func seperation(boid: Boid) -> SIMD2<Float> {
         let minDistance: Float = 0.35
-        for b in BOIDS {
-            if(b !== boid){
-                if(distance(a: boid, b: b) <= minDistance) {
-                    boid.angle = boid.angle + 0.02
-                }
+        var nearbyVect = SIMD2<Float>(0,0)
+        for other in BOIDS {
+            if(other !== boid && distance(a: boid, b: other) <= minDistance){
+                nearbyVect += (other.position - boid.position)
             }
         }
+        return -1 * nearbyVect
     }
     
 }

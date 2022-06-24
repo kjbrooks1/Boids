@@ -11,11 +11,13 @@ class Boid {
     
     var color = SIMD4<Float>(0.6, 0.9, 0.1, 1.0) // neon green
     var position: SIMD2<Float>
+    var velocity: SIMD2<Float>
     var angle: Float
     
     init() {
         position = SIMD2<Float>(Float.random(in: -0.9 ... 0.9), Float.random(in: -0.9 ... 0.9))
-        angle = Float.random(in: 0 ..< (2 * .pi))
+        angle = atan(position.y / position.x) //Float.random(in: 0 ..< (2 * .pi))
+        velocity = SIMD2<Float>(cos(angle), sin(angle))
     }
     
     static func triangleVertices() -> [Float] {
